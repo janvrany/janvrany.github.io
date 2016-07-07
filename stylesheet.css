@@ -150,3 +150,7 @@ div.column3:first-child {
 .center {
 	text-align:center;	
 }
+
+ul.nobullets {
+  list-style-type: none;  
+}
