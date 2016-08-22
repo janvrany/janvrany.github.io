@@ -1,0 +1,18 @@
+<% render '/default.*' do %>
+  <div class="column width3_4 post">
+    <h1><%= item[:title] %></h1>
+    <aside>Posted at: <%= get_pretty_date(item) %></aside>
+    <article>
+      <%= yield %>
+    </article>
+  </div>
+  <% if sorted_articles.size > 2 %>
+    <div class="column width1_4">
+      <% sorted_articles.each do |post| %>
+        <% if post != item %>
+          <h2><%= link_to post[:title], post.path %></h2>      
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>
