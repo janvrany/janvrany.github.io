@@ -4,15 +4,26 @@
     <aside>Posted at: <%= get_pretty_date(item) %></aside>
     <article>
       <%= yield %>
-    </article>
+    </article>    
+    <script src="https://apis.google.com/js/plusone.js"></script>
+    <div id="comments"></div>
+    <script>
+    gapi.comments.render('comments', {
+        href: window.location,
+        width: '624',
+        first_party_property: 'BLOGGER',
+        view_type: 'FILTERED_POSTMOD'
+    });
+    </script>    
   </div>
   <% if sorted_articles.size > 2 %>
     <div class="column width1_4">
       <% sorted_articles.each do |post| %>
-        <% if post != item %>
+        <% if (post != item) and (post[published] == true) %>
           <h2><%= link_to post[:title], post.path %></h2>      
         <% end %>
       <% end %>
     </div>
   <% end %>
+
 <% end %>
