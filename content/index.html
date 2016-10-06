@@ -1,4 +1,4 @@
-<div class="posts">
+<div class="posts column width1_2">
   <% if sorted_articles.size > 0 %>
     <% sorted_articles.each do |post| %>
       <% if (post[:published] != false) %>
@@ -14,4 +14,21 @@
   <% else %>
     <h1>No posts yet, sorry :-)</h1>    
   <% end %>
+</div>
+<div class="column width1_2">
+  <div class="center">
+    <img src="images/face.png"/>
+  </div>
+  <div>
+    <p>
+      There is no programming language that rules them all.
+    </p>
+    <p>
+      I'm interested in programming languages, compilers and virtual machines, 
+      in particular in multi-language programming environments.
+    </p>
+    <p>
+      I love Smalltalk. But I'm critical about it, all the same. 
+    </p>
+  </div>
 </div>

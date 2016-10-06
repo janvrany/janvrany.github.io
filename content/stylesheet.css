@@ -151,6 +151,10 @@ div.column:first-child {
   border-left: 0px; 
 }
 
+div.width1_2 {
+  width: 45%;
+}
+
 div.width1_3 {
   width: 30%;
 }
