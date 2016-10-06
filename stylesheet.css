@@ -1,4 +1,4 @@
-* {
+body * {
   margin: 0;
   padding: 0;
   font: 16px 'Source Sans Pro', sans-serif
@@ -50,57 +50,64 @@ a:hover {
     color: #ccc;
 }
 
-#main h1 {
+
+h1 {
   font-size: 150%;
-  font-weight: normal;
+  font-weight: bold;
   line-height: 40px;
-	letter-spacing: -1px;
+  letter-spacing: -1px;
 }
 
-#main h2,
-#main h3,
-#main h4,
-#main h5,
+h1 a {
+  font-size: 100%;
+  font-weight: bold;
+}
+
+h2,
+h3,
+h4,
+h5,
 em {  
   font-weight: bold;
 }
 
-#main h2 {
+h2 {
 	font-size: 140%;	
 }
 
-#main h3 {
+h3 {
 	font-size: 130%;	
 }
 
-#main h4 {
+h4 {
 	font-size: 120%;	
 }
 
-#main h5 {
+h5 {
 	font-size: 110%;	
 }
 
+pre {
+  margin-left: 2em;
+  border-left: 3px solid black;
+  padding-left: 1em;
+}
 
 #main p {
   margin: 20px 0;
-  text-align: justify;
-  font-size: 15px;
-
+  text-align: justify;  
   line-height: 20px;
 }
 
-#main ul, #main ol {
+ul, ol {
   margin: 20px;
 }
 
-#main li {
-  font-size: 15px;
-
+li {
   line-height: 20px;
 }
 
-#main ul li {
+ul li {
   list-style-type: square;
 }
 
@@ -115,8 +122,7 @@ em {
 }
 
 #sidebar h2 {
-  text-transform: uppercase;
-  font-size: 13px;
+  text-transform: uppercase;  
   color: #333;
   letter-spacing: 1px;
   line-height: 20px;
@@ -132,20 +138,40 @@ em {
   line-height: 20px;
 }
 
-
-div.column3 {
+div.column {
   display: inline-block;
   vertical-align: top;
-  width: 30%;
   margin: 0px;
   padding-left: 1%;
   padding-right: 1%;
   border-left: 1px dotted #027AC6;
 }
 
-div.column3:first-child {
+div.column:first-child {
   border-left: 0px; 
 }
+
+div.width1_2 {
+  width: 45%;
+}
+
+div.width1_3 {
+  width: 30%;
+}
+
+div.width2_3 {
+  width: 60%;
+}
+
+div.width1_4 {
+  width: 22%;
+}
+
+div.width3_4 {
+  width: 66%;
+}
+
+
 
 .center {
 	text-align:center;	
