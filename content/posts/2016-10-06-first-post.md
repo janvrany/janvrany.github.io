@@ -5,7 +5,7 @@ kind: article
 published: true
 ---
 
-I'm interested in many things. I have many ideas, all of them seems cool 
+I'm interested in many things. I have many ideas, all of them seem cool 
 initially but as soon as I try to explain them, most of them turn out to be
 rubbish. 
 
