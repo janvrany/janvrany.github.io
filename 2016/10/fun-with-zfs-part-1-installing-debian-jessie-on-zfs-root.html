@@ -1,0 +1,210 @@
+<!DOCTYPE HTML>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Jan Vraný - Fun with ZFS, part 1: Installing Debian Jessie on ZFS Root</title>
+    <link rel="stylesheet" href="/pygments.css">
+    <link rel="stylesheet" href="/stylesheet.css">
+    
+
+    <!-- you don't need to keep this, but it's cool for stats! -->
+    <meta name="generator" content="Nanoc 4.2.4">
+  </head>
+  <body>
+    <div id="header">
+      <div id="jv">
+        Jan Vraný
+      </div>
+
+    	<ul>
+    	<li><a href="/">home</a></li>
+    	<li><a href="/posts">blog</a></li>
+        <li><a href="/projects">projects</a></li>                      
+        <li><a href="https://bitbucket.org/janvrany/">repositories</a></li>
+        <li><a href="/contact">contact</a></li>        
+        <li><a href="/cv.pdf">cv</a></li>
+    	</ul>
+    </div>
+    <div id="main">
+      
+  <div class="column width3_4 post">
+    <h1>Fun with ZFS, part 1: Installing Debian Jessie on ZFS Root</h1>
+    <aside>Posted at: October 6, 2016</aside>
+    <article>
+      
+<h2 id="preface">Preface</h2>
+
+<p>Couple weeks ago I decided to make myself a small home server. Home sever, 
+sounds weird, doesn’t it? Home’s not work place, no?</p>
+
+<p>Well, it is, in my case. I have no need for media center, downloading and 
+streaming movies or even playing on TV, nothing like this. But I need a  storage
+ for backups and host to run virtual machines on.</p>
+
+<!-- more -->
+
+<p>Initially I thought about buying some NAS but then a friend pointed out, 
+correctly, that I need none of the features of small NAS solutions for home
+sector so why paying for that. He suggested to go for a <a href="1">HP ProLiant MicroServer 
+Gen8</a>. I could get an entry-level model for a reasonable price so I got
+myself one.</p>
+
+<p>This means, however, that I had to install and setup OS and everything myself.
+Since some people expressed interest in my experience, I’ll try to write down
+some interesting bits.</p>
+
+<h2 id="why-zfs">Why ZFS?</h2>
+
+<p>Why not? Since I want to run virtual machines on the server, I need something
+that allows me to allocate storage for them, extend it, take snapshots and so
+on. I used in the past Linux LVM, LUKS and ext4 / xfs on top of it but overall
+experience was not-so-good. A lot of hassle to resize volumes, many commands,
+super-easy to mess it up (I managed to mess it up couple times in the past). 
+ZFS looked interesting, all-in-one solution<sup id="a1"><a href="#f1">*</a></sup>, people 
+reported it is stable, battle-hardened and CPU and memory hungry. So I decided 
+to give it a go.</p>
+
+<h2 id="installing-debian-jessie">Installing Debian Jessie.</h2>
+
+<p>People behind <a href="2">ZFS On Linux</a> did an amazing job and wrote down an 
+idiot-proof step-by-step guide 
+<a href="3">HOWTO install Debian GNU Linux to a Native ZFS Root Filesystem</a>. 
+The only little issue is that it uses ZFS from ZOL project repository.</p>
+
+<p>Since ZFS found its way to Debian Project <a href="https://packages.debian.org/jessie-backports/zfs-dkms">4</a>, I decided use Debian packages. 
+Everything was pretty much straightforward but there were some gotchas.</p>
+
+<p>This is how I did it:</p>
+
+<ol>
+  <li>Boot from <a href="6">Debian Live 8.6 Live CD</a>
+</li>
+  <li>
+    <p>Log in to live session (username is “user”, password “live”) and
+install package <a href="4">zfs-dkms</a> from <a href="7">jessie-backports</a>:</p>
+
+    <ul>
+      <li>
+        <p>Edit <code>/etc/apt/sources.list</code> and add following:</p>
+
+        <pre><code>deb http://ftp.debian.org/debian jessie-backports main
+deb-src http://ftp.debian.org/debian jessie-backports main
+deb http://ftp.debian.org/debian jessie-backports  contrib
+deb-src http://ftp.debian.org/debian jessie-backports  contrib</code></pre>
+      </li>
+      <li>
+        <p>Update package database:</p>
+
+        <pre><code>sudo apt-get update</code></pre>
+      </li>
+      <li>
+        <p>Install <code>zfs</code> module and userland tools:</p>
+
+        <pre><code>sudo apt-get update</code></pre>
+      </li>
+    </ul>
+  </li>
+  <li>Now follow <a href="3">ZOL guide</a> up to <a href="8">Step 3: Disk Formatting</a>. My server
+has an on-board MicroSD card slot and I had old, unused 2GB MicroSD card
+so I decided to use it for while <code>/boot</code>, not only for <code>/boot/grub</code> as the guide suggest. This looked to me as safer option since this way kernels and
+initrd images are stored a good old ext3 so GRUB does not need to 
+understand ZFS.</li>
+  <li>
+    <p>Then continue with ZOL guide up to <a href="5">Step 6: Cleanup and First Reboot</a>. 
+Just before leaving chroot do following:</p>
+
+    <ul>
+      <li>
+        <p>Edit <code>/etc/default/grub</code> and add <code>boot=zfs</code> to 
+<code>GRUB_CMDLINE_LINUX_DEFAULT</code> variable. This is required
+for code in initrd to setup ZFS before mounting root
+filesystem. Actually, this took me some time for figure this
+out and I only find out after reading the scripts in generated 
+initrd.</p>
+      </li>
+      <li>
+        <p>In <code>/etc/grub.d/10_linux</code> fix the code that determines current 
+filesystem. Comment the original code and add new one that does it by
+simply parsing output of <code>mount</code> command.</p>
+
+        <pre><code>  xzfs)
+    # Original code (does not work)
+    #rpool=`${grub_probe} --device ${GRUB_DEVICE} --target=fs_label 2&gt;/dev/null || true`
+    #bootfs="`make_system_path_relative_to_its_root / | sed -e "s,@$,,"`"
+    #LINUX_ROOT_DEVICE="ZFS=${rpool}${bootfs}"
+
+    # Workaround          
+    zfsroot=`mount | grep '/ type zfs' | cut -d ' ' -f 1`
+    LINUX_ROOT_DEVICE="ZFS=${zfsroot}"
+    ;;</code></pre>
+
+        <p>Indeed this is an ugly hack and fragile, but works for me for now. ZOL
+team seems to be aware of this and is working on a fix, AFAIK.</p>
+      </li>
+      <li>
+        <p>Create new file <code>70-zfs-grub-fix.rules</code> with following contents:</p>
+
+        <pre><code>KERNEL=="sd*", ENV{ID_SERIAL}=="?*", SYMLINK+="$env{ID_BUS}-$env{ID_SERIAL}"
+ENV{DEVTYPE}=="partition", IMPORT{parent}="ID_*", ENV{ID_FS_TYPE}=="zfs_member", SYMLINK+="$env{ID_BUS}-$env{ID_SERIAL} $env{ID_BUS}-$env{ID_SERIAL}-part%n"</code></pre>
+
+        <p>and refresh <code>dev</code> by issuing:</p>
+
+        <pre><code>udevadm trigger</code></pre>
+
+        <p>For whatever reason (perhaps a bug) GRUB scripts does no look for devices
+in <code>/dev/disk/by-id</code> but in <code>/dev</code> and fails when it cannot find them. This ugly indeed but again, works for me for now. Again, ZIL team works
+on this too.</p>
+      </li>
+      <li>
+        <p>Finally, update GRUB:</p>
+
+        <pre><code>update-grub</code></pre>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <p>And continue with ZOL guide.</p>
+  </li>
+  <li>Have fun with ZFS!</li>
+</ol>
+
+<p>Hope it helps.</p>
+
+<hr>
+
+<p><b id="f1">*)</b>
+I can hear so-called UNIXers screaming this is bad, against UNIX 
+philosophy, blah blah blah. You know, each tool should do exactly one 
+thing then you can combine them the way you like, not the way developer 
+like. This is the one and true “UNIX way”. It might well be against 
+UNIX philosophy, but man: I can’t care less :-) As long as it works well
+and is easy to use, I’m fine with that. 
+<a href="#a1">↩</a></p>
+
+
+    </article>    
+    <script src="https://apis.google.com/js/plusone.js"></script>
+    <div id="comments"></div>
+    <script>
+    gapi.comments.render('comments', {
+        href: window.location,
+        width: '624',
+        first_party_property: 'BLOGGER',
+        view_type: 'FILTERED_POSTMOD'
+    });
+    </script>    
+  </div>
+  
+
+
+    </div>
+    <script>
+  	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  	(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  	})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  	ga('create', 'UA-80636532-1', 'auto');
+  	ga('send', 'pageview');
+    </script>
+  </body>
+</html>
