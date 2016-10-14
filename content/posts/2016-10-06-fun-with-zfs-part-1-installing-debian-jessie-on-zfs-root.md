@@ -18,8 +18,8 @@ streaming movies or even playing on TV, nothing like this. But I need a  storage
 
 Initially I thought about buying some NAS but then a friend pointed out, 
 correctly, that I need none of the features of small NAS solutions for home
-sector so why paying for that. He suggested to go for a [HP ProLiant MicroServer 
-Gen8](1). I could get an entry-level model for a reasonable price so I got
+sector so why paying for that. He suggested to go for a 
+[HP ProLiant MicroServer Gen8][1]. I could get an entry-level model for a reasonable price so I got
 myself one. 
 
 This means, however, that I had to install and setup OS and everything myself.
@@ -39,9 +39,9 @@ to give it a go.
 
 ## Installing Debian Jessie.
 
-People behind [ZFS On Linux](2) did an amazing job and wrote down an 
+People behind [ZFS On Linux][2] did an amazing job and wrote down an 
 idiot-proof step-by-step guide 
-[HOWTO install Debian GNU Linux to a Native ZFS Root Filesystem](3). 
+[HOWTO install Debian GNU Linux to a Native ZFS Root Filesystem][3]. 
 The only little issue is that it uses ZFS from ZOL project repository. 
 
 Since ZFS found its way to Debian Project [4], I decided use Debian packages. 
@@ -49,9 +49,9 @@ Everything was pretty much straightforward but there were some gotchas.
 
 This is how I did it: 
 
- 1. Boot from [Debian Live 8.6 Live CD](6)
+ 1. Boot from [Debian Live 8.6 Live CD][6]
  2. Log in to live session (username is "user", password "live") and
-    install package [zfs-dkms](4) from [jessie-backports](7):
+    install package [zfs-dkms][4] from [jessie-backports][7]:
 
     * Edit `/etc/apt/sources.list` and add following:
       
@@ -64,15 +64,16 @@ This is how I did it:
 
       <pre><code>sudo apt-get update</code></pre>
 
-    * Install `zfs` module and userland tools:
+    * Install `zfs` module (userland tools will be pulled as dependencies):
 
-      <pre><code>sudo apt-get update</code></pre>      
- 1. Now follow [ZOL guide](3) up to [Step 3: Disk Formatting](8). My server
+      <pre><code>sudo apt-get install zfs-dkms</code></pre>   
+
+ 1. Now follow [ZOL guide][3] up to [Step 3: Disk Formatting][8]. My server
     has an on-board MicroSD card slot and I had old, unused 2GB MicroSD card
     so I decided to use it for while `/boot`, not only for `/boot/grub` as the guide suggest. This looked to me as safer option since this way kernels and
     initrd images are stored a good old ext3 so GRUB does not need to 
     understand ZFS.                     
- 1. Then continue with ZOL guide up to [Step 6: Cleanup and First Reboot](5). 
+ 1. Then continue with ZOL guide up to [Step 6: Cleanup and First Reboot][5]. 
     Just before leaving chroot do following:
 
     * Edit `/etc/default/grub` and add `boot=zfs` to 
