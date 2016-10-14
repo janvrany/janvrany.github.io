@@ -45,8 +45,8 @@ streaming movies or even playing on TV, nothing like this. But I need a  storage
 
 <p>Initially I thought about buying some NAS but then a friend pointed out, 
 correctly, that I need none of the features of small NAS solutions for home
-sector so why paying for that. He suggested to go for a <a href="1">HP ProLiant MicroServer 
-Gen8</a>. I could get an entry-level model for a reasonable price so I got
+sector so why paying for that. He suggested to go for a 
+<a href="https://www.hpe.com/us/en/product-catalog/servers/proliant-servers/pip.hpe-proliant-microserver-gen8-server.5379860.html#">HP ProLiant MicroServer Gen8</a>. I could get an entry-level model for a reasonable price so I got
 myself one.</p>
 
 <p>This means, however, that I had to install and setup OS and everything myself.
@@ -66,9 +66,9 @@ to give it a go.</p>
 
 <h2 id="installing-debian-jessie">Installing Debian Jessie.</h2>
 
-<p>People behind <a href="2">ZFS On Linux</a> did an amazing job and wrote down an 
+<p>People behind <a href="http://zfsonlinux.org/">ZFS On Linux</a> did an amazing job and wrote down an 
 idiot-proof step-by-step guide 
-<a href="3">HOWTO install Debian GNU Linux to a Native ZFS Root Filesystem</a>. 
+<a href="https://github.com/zfsonlinux/zfs/wiki/HOWTO-install-Debian-GNU-Linux-to-a-Native-ZFS-Root-Filesystem">HOWTO install Debian GNU Linux to a Native ZFS Root Filesystem</a>. 
 The only little issue is that it uses ZFS from ZOL project repository.</p>
 
 <p>Since ZFS found its way to Debian Project <a href="https://packages.debian.org/jessie-backports/zfs-dkms">4</a>, I decided use Debian packages. 
@@ -77,11 +77,11 @@ Everything was pretty much straightforward but there were some gotchas.</p>
 <p>This is how I did it:</p>
 
 <ol>
-  <li>Boot from <a href="6">Debian Live 8.6 Live CD</a>
+  <li>Boot from <a href="http://cdimage.debian.org/debian-cd/current-live/amd64/bt-hybrid/debian-live-8.6.0-amd64-standard.iso.torrent">Debian Live 8.6 Live CD</a>
 </li>
   <li>
     <p>Log in to live session (username is “user”, password “live”) and
-install package <a href="4">zfs-dkms</a> from <a href="7">jessie-backports</a>:</p>
+install package <a href="https://packages.debian.org/jessie-backports/zfs-dkms">zfs-dkms</a> from <a href="https://backports.debian.org/Instructions/">jessie-backports</a>:</p>
 
     <ul>
       <li>
@@ -98,19 +98,19 @@ deb-src http://ftp.debian.org/debian jessie-backports  contrib</code></pre>
         <pre><code>sudo apt-get update</code></pre>
       </li>
       <li>
-        <p>Install <code>zfs</code> module and userland tools:</p>
+        <p>Install <code>zfs</code> module (userland tools will be pulled as dependencies):</p>
 
-        <pre><code>sudo apt-get update</code></pre>
+        <pre><code>sudo apt-get install zfs-dkms</code></pre>
       </li>
     </ul>
   </li>
-  <li>Now follow <a href="3">ZOL guide</a> up to <a href="8">Step 3: Disk Formatting</a>. My server
+  <li>Now follow <a href="https://github.com/zfsonlinux/zfs/wiki/HOWTO-install-Debian-GNU-Linux-to-a-Native-ZFS-Root-Filesystem">ZOL guide</a> up to <a href="https://github.com/zfsonlinux/zfs/wiki/HOWTO-install-Debian-GNU-Linux-to-a-Native-ZFS-Root-Filesystem#step-3-disk-formatting">Step 3: Disk Formatting</a>. My server
 has an on-board MicroSD card slot and I had old, unused 2GB MicroSD card
 so I decided to use it for while <code>/boot</code>, not only for <code>/boot/grub</code> as the guide suggest. This looked to me as safer option since this way kernels and
 initrd images are stored a good old ext3 so GRUB does not need to 
 understand ZFS.</li>
   <li>
-    <p>Then continue with ZOL guide up to <a href="5">Step 6: Cleanup and First Reboot</a>. 
+    <p>Then continue with ZOL guide up to <a href="https://github.com/zfsonlinux/zfs/wiki/HOWTO-install-Debian-GNU-Linux-to-a-Native-ZFS-Root-Filesystem#step-6--cleanup-and-first-reboot">Step 6: Cleanup and First Reboot</a>. 
 Just before leaving chroot do following:</p>
 
     <ul>
