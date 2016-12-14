@@ -8,7 +8,7 @@
     
 
     <!-- you don't need to keep this, but it's cool for stats! -->
-    <meta name="generator" content="Nanoc 4.2.4">
+    <meta name="generator" content="Nanoc 4.4.2">
   </head>
   <body>
     <div id="header">
@@ -170,6 +170,28 @@ on this too.</p>
 
 <p>Hope it helps.</p>
 
+<h2 id="a-follow-up">A follow up…</h2>
+
+<p>Hajo Noerenberg wrote a <a href="https://github.com/hn/debian-jessie-zfs-root">script</a> that automates the above process and was so nice
+to share it:</p>
+
+<blockquote>
+  <p>Hi,</p>
+
+  <p>Debian’s grub has problems with detecting ZFS pools with
+feature@hole_birth=enabled and feature@embedded_data=enabled. If you
+disable those features (only possible for new pools), grub installs
+correctly without errors (and /etc/grub.d/10_linux correctly detects
+ZFS
+as well).</p>
+
+  <p>I’ve put together a fully automatic script for native ZFS
+installation: https://github.com/hn/debian-jessie-zfs-root</p>
+</blockquote>
+
+<p>I haven’t tried myself, but clearly worth having a look. I’ll certainly give
+it a go as soon as <a href="https://github.com/zfsonlinux/zfs/pull/4329">native ZFS encryption</a> finds it’s way to ZFS on Linux.</p>
+
 <hr>
 
 <p><b id="f1">*)</b>
@@ -194,6 +216,22 @@ and is easy to use, I’m fine with that.
     });
     </script>    
   </div>
+  
+    <div class="column width1_4">
+      
+        
+      
+        
+          <h2><a href="/2016/10/a-taste-of-dotNET-in-Bee-Smalltalk.html">A taste of .NET in Bee Smalltalk</a></h2>      
+        
+      
+        
+      
+        
+          <h2><a href="/2016/10/first-post.html">First Post</a></h2>      
+        
+      
+    </div>
   
 
 

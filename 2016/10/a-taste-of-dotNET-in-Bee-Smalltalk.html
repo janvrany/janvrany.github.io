@@ -1,0 +1,314 @@
+<!DOCTYPE HTML>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Jan Vraný - A taste of .NET in Bee Smalltalk</title>
+    <link rel="stylesheet" href="/pygments.css">
+    <link rel="stylesheet" href="/stylesheet.css">
+    
+
+    <!-- you don't need to keep this, but it's cool for stats! -->
+    <meta name="generator" content="Nanoc 4.4.2">
+  </head>
+  <body>
+    <div id="header">
+      <div id="jv">
+        Jan Vraný
+      </div>
+
+    	<ul>
+    	<li><a href="/">home</a></li>
+    	<li><a href="/posts">blog</a></li>
+        <li><a href="/projects">projects</a></li>                      
+        <li><a href="https://bitbucket.org/janvrany/">repositories</a></li>
+        <li><a href="/contact">contact</a></li>        
+        <li><a href="/cv.pdf">cv</a></li>
+    	</ul>
+    </div>
+    <div id="main">
+      
+  <div class="column width3_4 post">
+    <h1>A taste of .NET in Bee Smalltalk</h1>
+    <aside>Posted at: October 13, 2016</aside>
+    <article>
+      
+<p>Couple days ago, I finally managed to get .NET to do a job for me. Not much but 
+still .NET did its job and did it well. The following text shows how to call
+.NET code from Bee Smalltalk and retrieve results. I won’t go into technical 
+details on how it’s done internally, rather show the usage from user point of
+view. The goal is to give you an idea how it might feel to call .NET code from
+Bee Smalltalk.</p>
+
+<!-- more -->
+
+<h2 id="the-task">The Task</h2>
+
+<p>The task is very simple. I have a list of CDs in an XML file with custom XML 
+format and I want to generate an HTML file, for instance to put it on my web site
+or, say, to generate an HTML mail with price list. Whatever. The <code>cd.xml</code> files
+looks like:</p>
+
+<pre><code class="language-xml"><span class="cp">&lt;?xml version="1.0" encoding="ISO-8859-1"?&gt;</span>
+<span class="nt">&lt;catalog&gt;</span>
+  <span class="nt">&lt;cd&gt;</span>
+    <span class="nt">&lt;title&gt;</span>Empire Burlesque<span class="nt">&lt;/title&gt;</span>
+    <span class="nt">&lt;artist&gt;</span>Bob Dylan<span class="nt">&lt;/artist&gt;</span>
+    <span class="nt">&lt;country&gt;</span>USA<span class="nt">&lt;/country&gt;</span>
+    <span class="nt">&lt;company&gt;</span>Columbia<span class="nt">&lt;/company&gt;</span>
+    <span class="nt">&lt;price&gt;</span>10.90<span class="nt">&lt;/price&gt;</span>
+    <span class="nt">&lt;year&gt;</span>1985<span class="nt">&lt;/year&gt;</span>
+  <span class="nt">&lt;/cd&gt;</span>
+  <span class="nt">&lt;cd&gt;</span>
+    <span class="nt">&lt;title&gt;</span>Hide your heart<span class="nt">&lt;/title&gt;</span>
+    <span class="nt">&lt;artist&gt;</span>Bonnie Tyler<span class="nt">&lt;/artist&gt;</span>
+    <span class="nt">&lt;country&gt;</span>UK<span class="nt">&lt;/country&gt;</span>
+    <span class="nt">&lt;company&gt;</span>CBS Records<span class="nt">&lt;/company&gt;</span>
+    <span class="nt">&lt;price&gt;</span>9.90<span class="nt">&lt;/price&gt;</span>
+    <span class="nt">&lt;year&gt;</span>1988<span class="nt">&lt;/year&gt;</span>
+  <span class="nt">&lt;/cd&gt;</span>
+  <span class="c">&lt;!-- ...more... --&gt;</span>
+<span class="nt">&lt;/catalog&gt;</span></code></pre>
+
+<p>I’d like to use XSL transformation to create resulting HTML. I can of course 
+parse it and generate HTML myself, but that’s too much manual work. I’d rather
+write a simple XSL transformation <a href="https://www.w3.org/TR/xslt20/">1</a> and let XSLT processor to do the hard job. 
+This is, after all, what XSL was designed for. The <code>cd.xsl</code> looks like:</p>
+
+<pre><code class="language-xslt"><span class="cp">&lt;?xml version="1.0" encoding="ISO-8859-1"?&gt;</span>
+<span class="k">&lt;xsl:stylesheet</span> <span class="na">version=</span><span class="s">"1.0"</span> <span class="na">xmlns:xsl=</span><span class="s">"http://www.w3.org/1999/XSL/Transform"</span><span class="nt">&gt;</span>
+<span class="k">&lt;xsl:template</span> <span class="na">match=</span><span class="s">"/"</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;html&gt;</span>
+    <span class="nt">&lt;body&gt;</span>
+    <span class="nt">&lt;h2&gt;</span>My CD Collection<span class="nt">&lt;/h2&gt;</span>
+      <span class="nt">&lt;table</span> <span class="na">border=</span><span class="s">"1"</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;tr</span> <span class="na">bgcolor=</span><span class="s">"#9acd32"</span><span class="nt">&gt;</span>
+          <span class="nt">&lt;th&gt;</span>Title<span class="nt">&lt;/th&gt;</span>
+          <span class="nt">&lt;th&gt;</span>Artist<span class="nt">&lt;/th&gt;</span>
+        <span class="nt">&lt;/tr&gt;</span>
+        <span class="k">&lt;xsl:for-each</span> <span class="na">select=</span><span class="s">"catalog/cd"</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;tr&gt;</span>
+          <span class="nt">&lt;td&gt;</span><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">"title"</span><span class="nt">/&gt;&lt;/td&gt;</span>
+          <span class="nt">&lt;td&gt;</span><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">"artist"</span><span class="nt">/&gt;&lt;/td&gt;</span>
+        <span class="nt">&lt;/tr&gt;</span>
+        <span class="k">&lt;/xsl:for-each&gt;</span>
+      <span class="nt">&lt;/table&gt;</span>
+    <span class="nt">&lt;/body&gt;</span>
+  <span class="nt">&lt;/html&gt;</span>
+<span class="k">&lt;/xsl:template&gt;</span>
+<span class="k">&lt;/xsl:stylesheet&gt;</span></code></pre>
+
+<p>There’s no (native) implementation of XSLT processor in Bee (and if 
+fact in no Smalltalk I know of). However .NET contains XSLT processor <a href="https://msdn.microsoft.com/en-us/library/system.xml.xsl.xslcompiledtransform(v=vs.110).aspx">2</a> so 
+let’s “just” use it.</p>
+
+<p>Looking ant documentation of .NET <code>System.Xml.Xsl.XslCompiledTransform</code> class,
+the plan is simple:</p>
+
+<ul>
+  <li>load data (<code>cd.xml</code>),</li>
+  <li>create an output buffer (wrapped in <code>System.Xml.XmlWriter</code> for <code>XslCompiledTransform</code> convenience),</li>
+  <li>create an instance of <code>XslCompiledTransform</code>,</li>
+  <li>load stylesheet (<code>cd.xsl</code>),</li>
+  <li>let <code>XslCompiledTransform</code> instance work out the magic,</li>
+  <li>read contents of the buffer,</li>
+  <li>job done.</li>
+</ul>
+
+<p>In Bee:</p>
+
+<pre><code class="language-smalltalk">[
+    <span class="c">"load data as instance"</span>
+    
+    <span class="nv">data</span> <span class="o">:=</span> <span class="nc">System</span><span class="p">.</span><span class="nc">Xml</span><span class="p">.</span><span class="nc">XPath</span><span class="p">.</span><span class="nc">XPathDocument</span> <span class="nf">new:</span> <span class="s">'cd.xml'</span><span class="p">.</span>
+   
+    <span class="c">"create an output buffer"</span>
+    <span class="nv">buffer</span> <span class="o">:=</span> <span class="nc">System</span><span class="p">.</span><span class="nc">Text</span><span class="p">.</span><span class="nc">StringBuilder</span> <span class="nb">new</span><span class="p">.</span>
+    <span class="nv">writer</span> <span class="o">:=</span> <span class="nc">System</span><span class="p">.</span><span class="nc">Xml</span><span class="p">.</span><span class="nc">XmlWriter</span> <span class="nf">Create:</span> <span class="nv">buffer</span><span class="p">.</span>
+
+    <span class="c">"create an XSLT processor and load stylesheet"</span>
+    <span class="nv">xslt</span> <span class="o">:=</span>  <span class="nc">System</span><span class="p">.</span><span class="nc">Xml</span><span class="p">.</span><span class="nc">Xsl</span><span class="p">.</span><span class="nc">XslCompiledTransform</span> <span class="nb">new</span><span class="p">.</span>
+    <span class="nv">xslt</span> <span class="nf">Load:</span> <span class="s">'cd.xsl'</span><span class="p">.</span>
+    
+    <span class="c">"let the magic happen"</span>    
+    <span class="nv">xslt</span> <span class="nf">Transform:</span> <span class="nv">data</span> <span class="o">_</span><span class="err">:</span> <span class="bp">nil</span> <span class="o">_</span><span class="err">:</span> <span class="nv">writer</span> <span class="o">_</span><span class="err">:</span> <span class="bp">nil</span><span class="p">.</span>
+
+    <span class="c">"retrieve resulting HTML"</span>
+    <span class="o">^</span> <span class="nv">buffer</span> <span class="nf">ToString</span><span class="p">.</span>
+] <span class="nf">on:</span> <span class="nc">System</span><span class="p">.</span><span class="nc">IO</span><span class="p">.</span><span class="nc">FileNotFoundException</span> <span class="nf">do:</span> [<span class="o">:</span><span class="nv">fnfex</span> <span class="o">|</span>
+    <span class="c">"Not a great handler, but for a demo it will do"</span>
+    <span class="nc">TaskDialog</span> <span class="nf">warning:</span> <span class="s">'OOPS, file''s missing: '</span><span class="nf">,</span> <span class="nv">fnfex</span> <span class="nf">FileName</span><span class="p">.</span>
+] <span class="nf">on:</span> <span class="nc">System</span><span class="p">.</span><span class="nc">Xml</span><span class="p">.</span><span class="nc">Xsl</span><span class="p">.</span><span class="nc">XsltException</span> <span class="nf">do:</span>[<span class="o">:</span><span class="nv">xsltex</span> <span class="o">|</span>
+    <span class="nc">TaskDialog</span> <span class="nf">warning:</span> <span class="s">'OOPS, transformation failed: '</span> <span class="nf">,</span> <span class="nv">xsltex</span> <span class="nf">Message</span>
+]<span class="p">.</span>
+<span class="c">"job done"</span></code></pre>
+
+<p>Much like in C#, isn’t it? That’s the goal. Bee’s CLR interop does the
+magic for you. Well, not quite, see below. However, you can see that:</p>
+
+<ul>
+  <li>To refer to a .NET class, use fully qualified class name</li>
+  <li>Method names matches .NET method names, including the capitalization (it is the convention of .NET that method names starts with uppercase letter). If the method takes arguments, the keyword preceding second and more argument is <code>_:</code>. This is fixed in oder to make the code more predictable.</li>
+  <li>Constructors are exposed as class-side #new method, as it is customary in 
+Smalltalk</li>
+  <li>Static methods are exposed as class-side methods</li>
+  <li>Overloaded methods and constructors are properly handled, dispatching to 
+appropriate implementation based on <em>runtime</em> types of arguments.</li>
+  <li>.NET exception can be handled using Smalltalk idioms: just handle it
+using #on:do: as usual. The handler gets reference to .NET exception object.
+.NET exceptions can be rethrown but cannot be resumed (because the way CLR
+deals with exceptions).</li>
+</ul>
+
+<p>## A Little Sweeter (yet) Hypothetical Code</p>
+
+<p>Having to prefix classes is not so nice. Also having to use <code>_:</code> keyword makes 
+ the code to look little ugly. It can be done in a much sweeter way. Imagine:</p>
+
+<pre><code class="language-smalltalk"><span class="nf">Object</span>
+  <span class="err">subclass:</span> <span class="ss">#CD2HTMLGenerator</span>
+  <span class="nf">instanceVariableNames:</span> <span class="s">''</span>
+  <span class="nf">classVariableNames:</span> <span class="s">''</span>
+  <span class="nf">poolDictionaries:</span> <span class="s">'System.Xml System.Xml.Xsl System.Xml.XPath'</span>
+<span class="c">"..."</span>
+<span class="nf">generate</span>  
+  <span class="nf">|</span> <span class="nv">data</span> <span class="nf">buffer</span> <span class="nf">writer</span> <span class="nf">xslt</span> <span class="nf">|</span>
+  <span class="nv">data</span> <span class="o">:=</span> <span class="nc">XPathDocument</span> <span class="nb">new</span>(<span class="s">'cd.xml'</span>)<span class="p">.</span>    
+  <span class="nv">buffer</span> <span class="o">:=</span> <span class="nc">System</span><span class="p">.</span><span class="nc">Text</span><span class="p">.</span><span class="nc">StringBuilder</span> <span class="nb">new</span>()<span class="p">.</span>
+  <span class="nv">writer</span> <span class="o">:=</span> <span class="nc">XmlWriter</span> <span class="nf">Create</span>(<span class="nv">buffer</span>)<span class="p">.</span>    
+  <span class="nv">xslt</span> <span class="o">:=</span> <span class="nc">XslCompiledTransform</span> <span class="nb">new</span>()<span class="p">.</span>
+  <span class="nv">xslt</span> <span class="nf">Load</span>(<span class="s">'cd.xsl'</span>)<span class="p">.</span>      
+  <span class="nv">xslt</span> <span class="nf">Transform</span>(<span class="nv">data</span><span class="nf">,</span> <span class="bp">nil</span><span class="nf">,</span> <span class="nv">writer</span><span class="nf">,</span> <span class="bp">nil</span>)<span class="p">.</span>      
+  <span class="o">^</span> <span class="nv">buffer</span> <span class="nf">ToString</span>()<span class="p">.</span></code></pre>
+
+<p>Note that:</p>
+
+<ul>
+  <li>One can “import” classes from particular namespace by simply using a pool 
+dictionary with the same name as the namespace. This has more or less the 
+same effect as C# <code>using</code> declaration <a href="https://msdn.microsoft.com/en-gb/library/dfb3cx8s.aspx">3</a>.</li>
+  <li>One can use “parenthesis” syntax for calling method with arguments just 
+like in C-based languages. If found this nicer because in those languages
+method names do not play well with keywords and it makes it clear that you’re
+entering a different realm.</li>
+</ul>
+
+<p>As I said, the above code is hypothetical, it’s not possible to write the code 
+like this  right now. Bee’s parser and compiler would have to be extended. 
+Changes are rather cosmetic - other compilers have been changed to allow such 
+extended  syntax. Also I agree it’s a matter of a taste. Personally I’d prefer 
+this extended syntax.</p>
+
+<h2 id="is-it-really-that-simple">Is it Really that Simple?</h2>
+
+<p>No, as usual with computers, it is not. There’s a little more preparatory work
+that has to be carried before running the example.</p>
+
+<p>First of all, a suitable CLR runtime has to be loaded into a running Bee process. 
+So far I worked only with .NET 4.5 but generally speaking, .NET 4.x should work
+just the same. To load CLR, perform following Mumbo Jumbo:</p>
+
+<pre><code class="language-smalltalk"><span class="nv">runtimeInfo</span> <span class="o">:=</span> <span class="nc">ICLRMetaHostClient</span> <span class="nf">newInstance</span> <span class="nf">defaultRuntime</span><span class="p">.</span>
+<span class="nv">runtimeInfo</span> <span class="nf">isLoaded</span> <span class="nb">ifFalse:</span>[
+  <span class="nv">runtimeInfo</span> <span class="nf">getCLRHost</span> <span class="nf">Start</span>
+]<span class="p">.</span>
+<span class="nv">runtimeInfo</span> <span class="nf">getCorHost</span> <span class="nf">DefaultDomain</span><span class="p">.</span></code></pre>
+
+<p>Another question is from where the classes like <code>System.Xml.Xsl.XslCompiledTransform</code>
+come from? Obviously, these are just a little proxy classes for real .NET types,
+but how does Bee Smalltalk know what types are there in what assemblies?</p>
+
+<p>It does not (for now). You have to first manually import class you want to use 
+in your code. Class <code>CLRTranslator</code> does most of the job for you, so the process
+of importing the code boils down to executing something like:</p>
+
+<pre><code class="language-smalltalk"><span class="nf">ClrTranslator</span> 
+  <span class="err">importType:</span> <span class="s">'System.Xml.Xsl.XslCompiledTransform'</span> 
+  <span class="nf">from:</span><span class="s">'System.Xml, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'</span></code></pre>
+
+<p>Basically one has to tell which type (a fully qualified name is required here) 
+and from which assembly (System.Xml in the above example). Underlying code uses
+<code>AppDomain.Load(String)</code> <a href="https://msdn.microsoft.com/en-us/library/8wcywcds(v=vs.110).aspx">4</a> to load the assembly. This means that CLR runtime
+roles apply when resolving assembly name <a href="https://msdn.microsoft.com/en-us/library/yx7xezcf(v=vs.110).aspx">5</a>. In short:</p>
+
+<ul>
+  <li>For application-provided assemblies (shipped with the application) one can
+use short name i.e., <code>Bee.CLRInterop.Tests.Mocks</code>. Also for CLR core library
+one may use just <code>mscorlib</code>.</li>
+  <li>For assemblies stored in GAC <a href="https://msdn.microsoft.com/en-us/library/yf1d93sz(v=vs.110).aspx">6</a>, one has to use full name, including
+version, culture and pubkey information, i.e., <code>System.Xml, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</code>. To list all assemblies
+registered in GAC, use <code>gacutil.exe -l</code> (<code>gacutil.exe</code> can be found in 
+Microsoft SDK for Windows). If you won’t use full name, you’d get an error
+stating that assembly or one of its dependencies could not be loaded.</li>
+</ul>
+
+<p>When a class is imported into Bee as shown above it is automatically put into
+a Bee package corresponding with it’s assembly. For example, the class 
+<code>System.Xml.Xsl.XslCompiledTransform</code> would be put into package <code>System.Xml</code>, class
+<code>System.AppDomain</code> would be in package <code>mscorlib</code>. In other words, there’s 
+one-to-one mapping between .NET assemblies and Bee packages hosting proxy 
+classes. Such package is created if it does not exist already. One can save such 
+a package for future reuse so there’s no need to import classes every time Bee 
+starts up.</p>
+
+<p>The need for manual imports is, I hope, temporary until a mechanism to do it 
+lazily on demand is implemented.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>In this article I have demonstrated a use of .NET classes from Bee Smalltalk 
+as implemented in a prototype interop package. Since it was a prototype, a lot 
+of things are not implemented at all (such as exception propagation, object 
+identity management, Smalltalk delegates, generic types, threading and so on) 
+or implemented partially (proper marshaling of all basic value types).</p>
+
+<p>Nonetheless the above example actually runs on my machine.</p>
+
+<h2 id="acknowledgment">Acknowledgment</h2>
+
+<p>This prototype has been implemented as part of my work at <a href="https://www.petrovr.com/">CaesarSystems</a>.
+Many thanks for letting me to work on this and for their support. It has been
+- and still is - a great fun!</p>
+
+
+    </article>    
+    <script src="https://apis.google.com/js/plusone.js"></script>
+    <div id="comments"></div>
+    <script>
+    gapi.comments.render('comments', {
+        href: window.location,
+        width: '624',
+        first_party_property: 'BLOGGER',
+        view_type: 'FILTERED_POSTMOD'
+    });
+    </script>    
+  </div>
+  
+    <div class="column width1_4">
+      
+        
+      
+        
+      
+        
+          <h2><a href="/2016/10/fun-with-zfs-part-1-installing-debian-jessie-on-zfs-root.html">Fun with ZFS, part 1: Installing Debian Jessie on ZFS Root</a></h2>      
+        
+      
+        
+          <h2><a href="/2016/10/first-post.html">First Post</a></h2>      
+        
+      
+    </div>
+  
+
+
+    </div>
+    <script>
+  	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  	(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  	})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  	ga('create', 'UA-80636532-1', 'auto');
+  	ga('send', 'pageview');
+    </script>
+  </body>
+</html>
