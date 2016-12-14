@@ -124,6 +124,26 @@ ENV{DEVTYPE}=="partition", IMPORT{parent}="ID_*", ENV{ID_FS_TYPE}=="zfs_member",
 
 Hope it helps.
 
+## A follow up...
+
+Hajo Noerenberg wrote a [script][9] that automates the above process and was so nice
+to share it: 
+
+> Hi, 
+>
+> Debian's grub has problems with detecting ZFS pools with
+> feature@hole_birth=enabled and feature@embedded_data=enabled. If you
+> disable those features (only possible for new pools), grub installs
+> correctly without errors (and /etc/grub.d/10_linux correctly detects
+> ZFS
+> as well).
+>
+> I've put together a fully automatic script for native ZFS
+> installation: https://github.com/hn/debian-jessie-zfs-root 
+
+I haven't tried myself, but clearly worth having a look. I'll certainly give
+it a go as soon as [native ZFS encryption][10] finds it's way to ZFS on Linux.
+
 ---
 
 <b id="f1">*)</b>
@@ -145,3 +165,5 @@ and is easy to use, I'm fine with that.
 [6]: http://cdimage.debian.org/debian-cd/current-live/amd64/bt-hybrid/debian-live-8.6.0-amd64-standard.iso.torrent
 [7]: https://backports.debian.org/Instructions/
 [8]: https://github.com/zfsonlinux/zfs/wiki/HOWTO-install-Debian-GNU-Linux-to-a-Native-ZFS-Root-Filesystem#step-3-disk-formatting
+[9]: https://github.com/hn/debian-jessie-zfs-root
+[10]: https://github.com/zfsonlinux/zfs/pull/4329

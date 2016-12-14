@@ -99,6 +99,15 @@ pre {
   overflow-x: auto;
 }
 
+blockquote {
+  margin-left: 2em;
+  border-left: 3px solid black;
+  margin-right: 2em;
+  border-right: 3px solid black;  
+  padding: 1em;
+  overflow-x: auto;
+}
+
 #main p {
   margin: 20px 0;
   text-align: justify;  
