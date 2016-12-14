@@ -94,8 +94,9 @@ h5 {
 pre {
   margin-left: 2em;
   border-left: 3px solid black;
-  background-color: #CCCCCC;
-  padding-left: 1em;
+  background-color: #DDDDDD;
+  padding: 1em;
+  overflow-x: auto;
 }
 
 #main p {

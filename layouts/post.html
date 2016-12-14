@@ -19,7 +19,7 @@
   <% if sorted_articles.size > 2 %>
     <div class="column width1_4">
       <% sorted_articles.each do |post| %>
-        <% if (post != item) and (post[published] == true) %>
+        <% if (post != item) and (post[:published] == true) %>
           <h2><%= link_to post[:title], post.path %></h2>      
         <% end %>
       <% end %>
