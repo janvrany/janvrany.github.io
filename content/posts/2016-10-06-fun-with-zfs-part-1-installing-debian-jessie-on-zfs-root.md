@@ -139,7 +139,7 @@ to share it:
 > as well).
 >
 > I've put together a fully automatic script for native ZFS
-> installation: https://github.com/hn/debian-jessie-zfs-root 
+> installation: [https://github.com/hn/debian-jessie-zfs-root][11]
 
 I haven't tried myself, but clearly worth having a look. I'll certainly give
 it a go as soon as [native ZFS encryption][10] finds it's way to ZFS on Linux.
@@ -167,3 +167,4 @@ and is easy to use, I'm fine with that.
 [8]: https://github.com/zfsonlinux/zfs/wiki/HOWTO-install-Debian-GNU-Linux-to-a-Native-ZFS-Root-Filesystem#step-3-disk-formatting
 [9]: https://github.com/hn/debian-jessie-zfs-root
 [10]: https://github.com/zfsonlinux/zfs/pull/4329
+[11]: https://github.com/hn/debian-jessie-zfs-root
