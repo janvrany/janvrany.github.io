@@ -29,7 +29,7 @@
       
   <div class="column width3_4 post">
     <h1>Debugging mixed native-CLR application in WinDBG</h1>
-    <aside>Posted at: November 1, 2016</aside>
+    <aside>Posted at: January 25, 2017</aside>
     <article>
       
 <p>While working on CLR interop for Bee Smalltalk, things go wrong every now and
@@ -51,14 +51,15 @@ examine stack at throw-point. One does not have source code, so actually all
 one can get are function names and eventually inspect CLR objects and their
 contents. Not much, but better than nothing.</p>
 
-<p>I used (and still using) GDB a lot while working on Smalltalk/X so I know it by
+<p>I used (and still using) GDB a lot while working on Smalltalk/X VM and other
+low-level stuff so I know it by
 heart. But I’m still fairly new to this WinDBG stuff and keep forgetting stuff.
 This post is merely a note to myself (and perhaps to anybody would have to 
 mess up with CLR in otherwise native application).</p>
 
 <h2 id="the-problem">The Problem</h2>
 
-<p>Today I want to debug some rough edges on exception support in Bee’s CLR interop
+<p>The other day I wanted to debug some rough edges on exception support in Bee’s CLR interop
 package. One problem is that it somehow missed the very first exception, i.e.,
 the first exception is lost and not propagated to Bee Smalltalk do #on:do: block
 fails to catch it.</p>
@@ -97,7 +98,8 @@ both <code>sosex.dll</code> and <code>sosex.pdb</code> to WinDBG directory. In m
 
 <p>Then load it into running WinDBG - in command prompt issue:</p>
 
-<p>.load sosex</p>
+<pre><code>.load sosex
+</code></pre>
 
 <p>You may print list of commands provided by SOSEX:</p>
 
@@ -292,7 +294,7 @@ static ExceptionHandler()
 
 <p>Thinking hard…harder…of course! We register our handler in a static 
 constructor, but did it run? Likely not. So, let’s double check when CLR runs
-static initializer of a class. That’s what documentation says:</p>
+static initializer of a class. That’s what spec says:</p>
 
 <blockquote>
   <p>The static constructor for a class executes at most once in a given application 
@@ -306,6 +308,12 @@ following events to occur within an application domain:</p>
 </blockquote>
 
 <p>This explains everything, doesn’t it? :-)</p>
+
+<h2 id="further-reading">Further reading</h2>
+
+<ul>
+  <li><a href="https://blogs.msdn.microsoft.com/alejacma/2009/07/07/managed-debugging-with-windbg-introduction-and-index/">MANAGED DEBUGGING with WINDBG. Introduction and Index</a></li>
+</ul>
 
 
     </article>    

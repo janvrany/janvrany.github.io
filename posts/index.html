@@ -30,6 +30,26 @@
   
     
       
+        <div class='post'>
+          <h1><a href="/2017/01/debugging-mixed-native-clr-application-in-windbg.html">Debugging mixed native-CLR application in WinDBG</a></h1>
+          <aside>Posted at: January 25, 2017</aside>
+          <article>
+            
+<p>While working on CLR interop for Bee Smalltalk, things go wrong every now and
+again. This is tricky to debug, at least for me, as there is Smalltalk code,
+then some native C++ code (CLR’s CCW and all this stuff) and finally managed
+CLR code.</p>
+
+<p>Obviously, Smalltalk debugger is kind of useless here as one would not see
+native nor managed stack there. Managed debugger is can be useful to see what’s
+happening in managed code, but quite often it got confused because we’re calling
+CLR from native application so more often than not all it tells you is that
+something went wrong - in case you don’t know that yet.</p>
+
+<div class='read-more'><a href='/2017/01/debugging-mixed-native-clr-application-in-windbg.html'>Continue reading &rsaquo;</a></div>
+          </article>
+        </div>
+      
     
       
         <div class='post'>
