@@ -93,10 +93,20 @@ h5 {
 
 pre {
   margin-left: 2em;
+  margin-right: 2em;
   border-left: 3px solid black;
   background-color: #DDDDDD;
   padding: 1em;
   overflow-x: auto;
+}
+
+ul {
+    margin-left: 1em;
+    padding-left: 1em;
+}
+
+li pre {
+    margin-left: 0;	
 }
 
 blockquote {

@@ -31,11 +31,40 @@
     
       
         <div class='post'>
+          <h1><a href="/2017/06/unamaged-delegates.html">Unmanaged delegates in CLR</a></h1>
+          <aside>Posted at: June 7, 2017</aside>
+          <article>
+            
+<p>As we progressed with <a href="/2016/10/a-taste-of-dotNET-in-Bee-Smalltalk.html">CLR interop for Bee Smalltalk</a>, a need to create 
+a delegate for an unmanaged code arose. By “a delegate for an unmanaged code” I mean
+an instance of a <a href="https://docs.microsoft.com/en-us/dotnet/articles/csharp/programming-guide/delegates/">delegate</a> object that can be passed to CLR code which, when
+called, would execute an unmanaged code. In our case a Smalltalk code.</p>
+
+<p>This can be handy, maybe necessary, if we want write a code that handles
+events. And we may well would like to do so, writing some UI code using .NET
+classes without use of event handlers seems to be impossible. Moreover, there
+are other interesting events we may want to handle, such as 
+<a href="https://msdn.microsoft.com/en-us/library/system.appdomain.firstchanceexception%28v=vs.110%29.aspx">AppDomain.FirstChanceException</a>.</p>
+
+<p>Looking at the .NET documentation. this seem to be an easy task. Just use 
+<a href="https://msdn.microsoft.com/en-us/library/zdx6dyyh%28v=vs.110%29.aspx">Marshal.GetDelegateForFunctionPointer()</a> to create a delegate object for
+an arbitrary function pointer. Looks easy but it turned out to be a little more
+tricky. And not very well documented. The following text describes my findings
+and my solution so far. Mainly for my (our) own record but someone else may find 
+useful too.</p>
+
+<div class='read-more'><a href='/2017/06/unamaged-delegates.html'>Continue reading &rsaquo;</a></div>
+          </article>
+        </div>
+        
+    
+      
+        <div class='post'>
           <h1><a href="/2017/01/debugging-mixed-native-clr-application-in-windbg.html">Debugging mixed native-CLR application in WinDBG</a></h1>
           <aside>Posted at: January 25, 2017</aside>
           <article>
             
-<p>While working on CLR interop for Bee Smalltalk, things go wrong every now and
+<p>While working on <a href="/2016/10/a-taste-of-dotNET-in-Bee-Smalltalk.html">CLR interop for Bee Smalltalk</a>, things go wrong every now and
 again. This is tricky to debug, at least for me, as there is Smalltalk code,
 then some native C++ code (CLR’s CCW and all this stuff) and finally managed
 CLR code.</p>
