@@ -5,7 +5,7 @@ kind: article
 published: true
 ---
 
-While working on CLR interop for Bee Smalltalk, things go wrong every now and
+While working on [CLR interop for Bee Smalltalk][4], things go wrong every now and
 again. This is tricky to debug, at least for me, as there is Smalltalk code,
 then some native C++ code (CLR's CCW and all this stuff) and finally managed
 CLR code. 
@@ -273,3 +273,4 @@ This explains everything, doesn't it? :-)
 [1]: http://www.stevestechspot.com/
 [2]: http://www.stevestechspot.com/downloads/sosex_32.zip
 [3]: https://blogs.msdn.microsoft.com/alejacma/2009/07/07/managed-debugging-with-windbg-introduction-and-index/
+[4]: /2016/10/a-taste-of-dotNET-in-Bee-Smalltalk.html
