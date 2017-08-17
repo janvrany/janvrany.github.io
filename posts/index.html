@@ -31,6 +31,103 @@
     
       
         <div class='post'>
+          <h1><a href="/2017/08/csr-mini-howto.html">How to generate TSL/SSL certificate and get it signed</a></h1>
+          <aside>Posted at: August 17, 2017</aside>
+          <article>
+            
+<h1 id="introduction">Introduction</h1>
+
+<p>I’m not much of an expert in cryptography and <a href="https://openvpn.net/">PKI</a> and these things are 
+insanely complex. My use-case is quite simple: I run several [OpenVPN][2] servers
+so I can access services behind that server from anywhere - safely.</p>
+
+<p>OpenVPN uses TSL/SSL certificates to authenticate clients, this means that
+server accepts connection from any client that presents a valid certificate.
+“Valid” means certificate that is signed by a <a href="https://en.wikipedia.org/wiki/Certificate_authority">CA</a> the server is configured
+to trust. So each client needs it’s private key (<code>.key</code>) and certificate (<code>.crt</code>).</p>
+
+<p>Now the question is: how does one get these? Suppose the guy I’d like to give an
+access my VPN server is far away. Indeed I can generate all this, sign it and send
+him these files over email, Jabber, Slack channel - you name it. But is this 
+safe enough? I’d say all these channels are insecure so some bad guy can intercept
+the message, stole key and certificate and use it for unauthorized access to 
+the VPN server under a name of my friend.</p>
+
+<p>So the question is: how does one get these safely? The answer is: the one has
+to generate her own key herself and then send the certificate to the CA for signing. 
+This is safe enough - private key need not to leave ones computer and certificate
+is by definition public so can be safely sent to anyone.</p>
+
+<p>Here’s</p>
+
+<h2 id="how-to-create-a-private-key-and-certificate-signing-request">How to create a private key and certificate signing request</h2>
+
+<p><em>Step 1: Create SSL configuration file</em></p>
+
+<p>As we’re using <code>openssl</code>, you’d need a configuration file for it. Following 
+would do (save it to some file, say <code>ssl.conf</code>):</p>
+
+<pre><code>[ req ]
+default_bits	= 2048
+distinguished_name	= req_distinguished_name
+prompt		= yes
+default_md		= sha256
+
+[ req_distinguished_name ]
+
+[ client ]
+basicConstraints	= critical, CA:FALSE
+subjectKeyIdentifier	= hash
+authorityKeyIdentifier	= keyid:always,issuer:always
+keyUsage		= digitalSignature, keyEncipherment
+nsCertType		= client
+extendedKeyUsage	= critical, clientAuth
+</code></pre>
+
+<p><em>Step 2: Generate a new key</em></p>
+
+<pre><code>openssl genrsa -out client.key -des3 2048
+</code></pre>
+
+<p>This will generate a new 2048 bit RSA (private) key and save it to <code>client.key</code>. This is the
+secret file no-one else should have access too. The <code>-des3</code> encrypts the key using
+a passphrase - you’ll be asked for it. Depending on your paranoia you may increase
+key bitsize to say 4096.</p>
+
+<p><em>Step 3: Generate certificate signing request</em></p>
+
+<p>Certificate signing request (<code>.csr</code>) is a file that it later processed by the CA
+to actually issue a signed certificate. Essentially, <code>.csr</code> contains a public key
+plus some other metadata such as who’s certificate it’s going be. This is a lengthy 
+command:</p>
+
+<pre><code>openssl req -config 'ssl.conf' -new -key 'client.key' -out 'client.csr' -extensions client \
+    -subj '/C=UK/ST=United Kingdom/L=Dundee/O=Some Company/emailAddress=some.guy@somecompany.co.uk/CN=Guy Some/'
+</code></pre>
+
+<p>Replace values in <code>-subj</code> accordingly - this identifies who’s certificate it is. 
+This produdes a file <code>client.csr</code> which we will need shortly.</p>
+
+<p><em>Step 4: Send <code>.csr</code> to the CA to get it signed</em></p>
+
+<p>Now take the <code>client.csr</code> you’ve created earlier and send it to the CA (in the
+case of OpenVPN run by me, send it to me). The CA will (eventyally) sign it and
+send you back the signed certificate (<code>.crt</code>) which then can be used to 
+authenticate to VPN server (or for other purposes). As there’s nothing secret
+in the <code>.csr</code> not <code>.crt</code> one may use email, Jabber, Slack channel, you name it, 
+to send it back and forth.</p>
+
+<h1 id="final-word">Final word</h1>
+
+<p>Hope that helps, have fun.</p>
+
+
+          </article>
+        </div>
+      
+    
+      
+        <div class='post'>
           <h1><a href="/2017/06/stx-libjava-used-for-real.html">STX:LIBJAVA used for real</a></h1>
           <aside>Posted at: June 7, 2017</aside>
           <article>
