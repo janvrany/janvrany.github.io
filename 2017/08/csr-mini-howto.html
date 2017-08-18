@@ -32,46 +32,80 @@
     <aside>Posted at: August 17, 2017</aside>
     <article>
       
-<h1 id="introduction">Introduction</h1>
+<h2 id="introduction">Introduction</h2>
 
-<p>I’m not much of an expert in cryptography and <a href="https://openvpn.net/">PKI</a> and these things are 
-insanely complex. My use-case is quite simple: I run several [OpenVPN][2] servers
-so I can access services behind that server from anywhere - safely.</p>
+<p>I recently had a need to provide an access to my private <a href="https://openvpn.net/">OpenVPN</a> server
+to couple of friends / colleagues. I ran my very own <a href="https://en.wikipedia.org/wiki/Certificate_authority">CA</a> for the purpose
+of issuing certificates for <a href="https://openvpn.net/">OpenVPN</a> clients. Usually I generate a key and
+(signed) certificate and give it to the client in a secure-enough way, e.g on
+my own USB stick.</p>
 
-<p>OpenVPN uses TSL/SSL certificates to authenticate clients, this means that
+<p>In this case these guys live far, far away, so far that it’s impractical to meet
+them face-to-face. Indeed I can generate key and certificate as usual, send them
+these over an email (or a Jabber, Slack channel, you name it). I’d rather not to
+do so, these channels are unsafe so someone may intercept and steal both the
+key and the certificate. Let’s do it properly, after all the whole point of VPN
+is to have a secure access and if the process of exchanging credentials is 
+insecure, it somewhat spoils the idea.</p>
+
+<p>How to issue them a working signed certificate in a secure way? 
+That’s the question…I hope this would shed some light on this.</p>
+
+<!-- more -->
+
+<h2 id="background">Background</h2>
+
+<p><a href="https://openvpn.net/">OpenVPN</a> uses TSL/SSL certificates to authenticate clients, this means that
 server accepts connection from any client that presents a valid certificate.
 “Valid” means certificate that is signed by a <a href="https://en.wikipedia.org/wiki/Certificate_authority">CA</a> the server is configured
 to trust. So each client needs it’s private key (<code>.key</code>) and certificate (<code>.crt</code>).</p>
 
-<p>Now the question is: how does one get these? Suppose the guy I’d like to give an
-access my VPN server is far away. Indeed I can generate all this, sign it and send
-him these files over email, Jabber, Slack channel - you name it. But is this 
-safe enough? I’d say all these channels are insecure so some bad guy can intercept
-the message, stole key and certificate and use it for unauthorized access to 
-the VPN server under a name of my friend.</p>
+<p>As in any <a href="https://en.wikipedia.org/wiki/Public-key_cryptography">public key cryprography</a>, the private key must be kept secret and
+never be passed to an untrusted entity (whatever it means) while the certificate 
+(essentially a public key plus some identification information) can be passed 
+freely. So the overall process is the following:</p>
 
-<p>So the question is: how does one get these safely? The answer is: the one has
-to generate her own key herself and then send the certificate to the CA for signing. 
-This is safe enough - private key need not to leave ones computer and certificate
-is by definition public so can be safely sent to anyone.</p>
+<ol>
+  <li>
+    <p>The <em>client</em> (in my case the friend who lives far, far away) generates 
+a key and certificate signing request (<code>.csr</code>).</p>
+  </li>
+  <li>
+    <p>The <em>client</em> sends the request to the CA, possibly over insecure channel
+(such as email or Jabber).</p>
+  </li>
+  <li>
+    <p>The <em>CA</em> signs the request and issues a signed certificate (<code>.crt</code>).</p>
+  </li>
+  <li>
+    <p>The <em>CA</em> sends the certificate back to the client over possibly insecure 
+channel.</p>
+  </li>
+</ol>
 
-<p>Here’s</p>
+<p>Now the client has all it needs: the private key and the signed certificate. What’s
+essential here is that the key need not to leave clients’ computer.</p>
 
-<h2 id="how-to-create-a-private-key-and-certificate-signing-request">How to create a private key and certificate signing request</h2>
+<h2 id="lets-make-it-practical">Let’s make it practical</h2>
 
-<p><em>Step 1: Create SSL configuration file</em></p>
+<p>A step-by-step guide using <a href="https://www.openssl.org/">OpenSSL</a>:</p>
 
-<p>As we’re using <code>openssl</code>, you’d need a configuration file for it. Following 
-would do (save it to some file, say <code>ssl.conf</code>):</p>
+<h3 id="step-1-generate-key-and-signing-request-client">Step 1. Generate key and signing request (client)</h3>
 
-<pre><code>[ req ]
+<ol>
+  <li>
+    <p>As we’re using <code>openssl</code>, first we’d need a configuration file for it. 
+Following would do (save it to some file, in the following we’d 
+use <code>ssl.conf</code>):</p>
+
+    <pre><code>[ req ]
 default_bits	= 2048
 distinguished_name	= req_distinguished_name
 prompt		= yes
 default_md		= sha256
 
 [ req_distinguished_name ]
-
+    
 [ client ]
 basicConstraints	= critical, CA:FALSE
 subjectKeyIdentifier	= hash
@@ -80,41 +114,63 @@ keyUsage		= digitalSignature, keyEncipherment
 nsCertType		= client
 extendedKeyUsage	= critical, clientAuth
 </code></pre>
+  </li>
+  <li>
+    <p>Generate a new key:</p>
 
-<p><em>Step 2: Generate a new key</em></p>
-
-<pre><code>openssl genrsa -out client.key -des3 2048
+    <pre><code>openssl genrsa -out client.key -des3 2048
 </code></pre>
 
-<p>This will generate a new 2048 bit RSA (private) key and save it to <code>client.key</code>. This is the
-secret file no-one else should have access too. The <code>-des3</code> encrypts the key using
-a passphrase - you’ll be asked for it. Depending on your paranoia you may increase
-key bitsize to say 4096.</p>
+    <p>This will generate a new 2048 bit RSA (private) key and save it to <code>client.key</code>. 
+This is the secret file no-one else should have access too. The <code>-des3</code> 
+encrypts the key using a passphrase - you’ll be asked for it. Depending on 
+your paranoia you may increase key bitsize to say 4096.</p>
+  </li>
+  <li>
+    <p>Generate certificate signing request</p>
 
-<p><em>Step 3: Generate certificate signing request</em></p>
+    <p>Certificate signing request (<code>.csr</code>) is a file that it later processed by 
+the CA to actually issue a signed certificate. Essentially, <code>.csr</code> contains 
+a public key plus some other metadata such as who’s certificate it’s going 
+be. This is a lengthy command:</p>
 
-<p>Certificate signing request (<code>.csr</code>) is a file that it later processed by the CA
-to actually issue a signed certificate. Essentially, <code>.csr</code> contains a public key
-plus some other metadata such as who’s certificate it’s going be. This is a lengthy 
-command:</p>
-
-<pre><code>openssl req -config 'ssl.conf' -new -key 'client.key' -out 'client.csr' -extensions client \
-    -subj '/C=UK/ST=United Kingdom/L=Dundee/O=Some Company/emailAddress=some.guy@somecompany.co.uk/CN=Guy Some/'
+    <pre><code>openssl req -config 'ssl.conf' -new -key 'client.key' -out 'client.csr' -extensions client \
+            -subj '/C=UK/ST=United Kingdom/L=Dundee/O=Some Company/emailAddress=some.guy@somecompany.co.uk/CN=Guy Some/'
 </code></pre>
 
-<p>Replace values in <code>-subj</code> accordingly - this identifies who’s certificate it is. 
-This produdes a file <code>client.csr</code> which we will need shortly.</p>
+    <p><em>Important:</em> replace values in <code>-subj</code> accordingly - this identifies who’s 
+certificate it is.</p>
 
-<p><em>Step 4: Send <code>.csr</code> to the CA to get it signed</em></p>
+    <p>This produces a file <code>client.csr</code> which we will need shortly.</p>
+  </li>
+</ol>
 
-<p>Now take the <code>client.csr</code> you’ve created earlier and send it to the CA (in the
-case of OpenVPN run by me, send it to me). The CA will (eventyally) sign it and
-send you back the signed certificate (<code>.crt</code>) which then can be used to 
-authenticate to VPN server (or for other purposes). As there’s nothing secret
-in the <code>.csr</code> not <code>.crt</code> one may use email, Jabber, Slack channel, you name it, 
-to send it back and forth.</p>
+<h3 id="step-2-send-the-signing-request-to-the-ca-client">Step 2. Send the signing request to the CA (client)</h3>
 
-<h1 id="final-word">Final word</h1>
+<p>This is easy, just take a <code>.csr</code> you get in previous step and send it to the
+CA, anyhow. In my case, my friends had to send the <code>.csr</code> to me by email or 
+Slack.</p>
+
+<h3 id="step-3-sign-the-request-and-issue-the-certificate-ca">Step 3. Sign the request and issue the certificate (CA)</h3>
+
+<p>For the sake of completeness, this is how the CA signs the request and issues
+the certificate. It assumes the CA is properly set up:</p>
+
+<pre><code>openssl ca --config ~/SomeOtherCA/ssl.conf -batch \
+          -infiles ~/SomeOtherCA/archive/Guy Some/client.csr \
+          -out ~/SomeOtherCA/archive/Guy Some/client.crt \
+          -key '/SomeOtherCA/ca.key' \
+          -startdate $(date +%Y%m%d%H%SZ -u) -extensions client -days '365' 
+</code></pre>
+
+<p>Actually, different CAs and CA management softwares might do it differently. the
+above is how I do it.</p>
+
+<h3 id="step-4-send-the-certificate-back-to-the-client-ca">Step 4. Send the certificate back to the client (CA)</h3>
+
+<p>This is easy, just take a <code>.crt</code> and send it back using whatever suits you best.</p>
+
+<h1 id="job-done">Job done!</h1>
 
 <p>Hope that helps, have fun.</p>
 
