@@ -75,6 +75,10 @@ a key and certificate signing request (<code>.csr</code>).</p>
 (such as email or Jabber).</p>
   </li>
   <li>
+    <p>The <em>CA</em> verifies the identity of the subject that sent the (`csr). This 
+is the tricky bit, see comment below.</p>
+  </li>
+  <li>
     <p>The <em>CA</em> signs the request and issues a signed certificate (<code>.crt</code>).</p>
   </li>
   <li>
@@ -85,6 +89,20 @@ channel.</p>
 
 <p>Now the client has all it needs: the private key and the signed certificate. What’s
 essential here is that the key need not to leave clients’ computer.</p>
+
+<p>The step 3. it both important and tricky. The CA must verify the one who sent the
+request it really the request is claiming to be. Otherwise, anyone (read: bad guy)
+can send a request on behalf of someone else and the CA would happily sign the 
+request. The means of verifying the identity differ among CAs, some do rigorous 
+checks, some do no checks at all.</p>
+
+<p>For my very case, I’d ask the client (my friend) to tell me a fingerprint of the
+<code>.csr</code> she just sent me <em>over different channel</em> than she sent me the <code>.csr</code> itself.
+So she can send me the <code>.csr</code> over email and then - ideally - tell me the 
+fingerprint in voice over Skype. Practically, confirming it over Slack would do
+too.</p>
+
+<p>Depending on your paranoia, the above may or may not be “safe-enough”.</p>
 
 <h2 id="lets-make-it-practical">Let’s make it practical</h2>
 
@@ -141,7 +159,12 @@ be. This is a lengthy command:</p>
     <p><em>Important:</em> replace values in <code>-subj</code> accordingly - this identifies who’s 
 certificate it is.</p>
 
-    <p>This produces a file <code>client.csr</code> which we will need shortly.</p>
+    <p>This produces a file <code>client.csr</code> which we will need shortly. To double
+check the contents <code>.csr</code>, most importantly the subject (person) asking
+for the certificate, do:</p>
+
+    <pre><code>openssl req  -subject -in client.csr
+</code></pre>
   </li>
 </ol>
 
@@ -151,7 +174,19 @@ certificate it is.</p>
 CA, anyhow. In my case, my friends had to send the <code>.csr</code> to me by email or 
 Slack.</p>
 
-<h3 id="step-3-sign-the-request-and-issue-the-certificate-ca">Step 3. Sign the request and issue the certificate (CA)</h3>
+<h3 id="step-3-verify-the-csr-is-genuine">Step. 3. Verify the <code>.csr</code> is genuine.</h3>
+
+<p>The depends on the CA. In my case, I ask my friends to tell me the fingerprint
+over another channel. This is how one can get the fingerprint of a <code>.csr</code>:</p>
+
+<pre><code>openssl dgst -sha256 client.csr
+</code></pre>
+
+<p>If this matches the fingerprint of the <code>.csr</code> I received (presumably, but not 
+for sure) from my friend, I consider the identity verified and can proceed to the
+next step - signing the request and issuing the certificate.</p>
+
+<h3 id="step-4-sign-the-request-and-issue-the-certificate-ca">Step 4. Sign the request and issue the certificate (CA)</h3>
 
 <p>For the sake of completeness, this is how the CA signs the request and issues
 the certificate. It assumes the CA is properly set up:</p>
@@ -166,13 +201,22 @@ the certificate. It assumes the CA is properly set up:</p>
 <p>Actually, different CAs and CA management softwares might do it differently. the
 above is how I do it.</p>
 
-<h3 id="step-4-send-the-certificate-back-to-the-client-ca">Step 4. Send the certificate back to the client (CA)</h3>
+<h3 id="step-5-send-the-certificate-back-to-the-client-ca">Step 5. Send the certificate back to the client (CA)</h3>
 
 <p>This is easy, just take a <code>.crt</code> and send it back using whatever suits you best.</p>
 
 <h1 id="job-done">Job done!</h1>
 
 <p>Hope that helps, have fun.</p>
+
+<h1 id="acknowledgment">Acknowledgment</h1>
+
+<p>I’d like to thank following people for their valuable comments:</p>
+
+<ul>
+  <li>ID E2E4</li>
+  <li>ID NEPHIRUS</li>
+</ul>
 
 
     </article>    
