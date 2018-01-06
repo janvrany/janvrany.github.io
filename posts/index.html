@@ -8,7 +8,7 @@
     
 
     <!-- you don't need to keep this, but it's cool for stats! -->
-    <meta name="generator" content="Nanoc 4.4.2">
+    <meta name="generator" content="Nanoc 4.8.18">
   </head>
   <body>
     <div id="header">
@@ -28,6 +28,160 @@
     <div id="main">
       <div class="posts">
   
+    
+      
+        <div class='post'>
+          <h1><a href="/2018/01/fun-with-zfs-part-2-creating-debian-zfs-rescue-usb-image.html">Fun with ZFS, part 2: Creating Debian ZFS Rescue USB Image</a></h1>
+          <aside>Posted at: January 4, 2018</aside>
+          <article>
+            
+<p>While ZFS is supposedly very stable and reliable it’s not an integral part
+of Linux and likely never will be (due to licensing issues). Because of that,
+upgrading kernel or the  operating system may go wrong. Well, so far in my
+case of Debian Jessie it was very smooth, but you never know. I have heard of
+people whose experience was not that great.</p>
+
+<p>Since I plan to do an OS upgrade, I want to be ready for the case the upgrade
+go wrong and I won’t be able to boot the OS stored on ZFS filesystem. In that
+case, one needs a a bootable live system with ZFS ready-to-use. Ideally the
+same version you’re already running (or planning to run) on the system one wants
+to upgrade.</p>
+
+<p>In case of Debian, creating such an image turned out to be very very simple…
+<!-- more --></p>
+
+<h2 id="creating-debian-live-rescue-image-with-zfs">Creating Debian Live Rescue Image with ZFS</h2>
+
+<p>Debian have tool named <em>live-build</em> <a href="https://debian-live.alioth.debian.org/live-manual/stable/manual/html/live-manual.en.html">1</a>. The easies way to get is just</p>
+
+<pre><code>sudo apt-get install live-build
+</code></pre>
+
+<p>Once installed:</p>
+
+<ol>
+  <li>
+    <p>Create a (temporary) working directory where it all happens:</p>
+
+    <pre><code>mkdir /tmp/debian-streatch-live+zfs
+cd /tmp/debian-streatch-live+zfs
+</code></pre>
+  </li>
+  <li>
+    <p>Generate initial configuration:</p>
+
+    <pre><code>lb config \
+  --distribution stretch \
+  --architectures=amd64 \
+  --binary-images iso-hybrid \
+  --iso-volume "Debian Stretch ZFS Rescue Live" \
+ 	   --archive-areas "main contrib" \
+ 	   --linux-packages "linux-image linux-headers"
+</code></pre>
+
+    <p>We should include <em>contrib</em> in archives since that’s where ZFS packages are.
+You may want to pass <code>--backports</code> if you want to include backports
+repositories. The <code>--linux-packages</code> is to include kernel headers necessary to
+compile ZFS kernel modules.</p>
+  </li>
+  <li>
+    <p>Configure additional packages to be installed, most importantly the ZFS packages:</p>
+
+    <pre><code>echo "
+zfs-dkms
+less
+curl
+wget
+openssh-client
+openssh-server
+openssh-sftp-server
+" &gt;&gt; config/package-lists/my.list.chroot
+</code></pre>
+  </li>
+  <li>
+    <p>Build the live root filesystem:</p>
+
+    <pre><code>sudo lb bootstrap
+sudo lb chroot
+</code></pre>
+  </li>
+  <li>
+    <p>Build the hybrid ISO binary:</p>
+
+    <pre><code>sudo lb binary
+</code></pre>
+
+    <p>After this step, you should find the resulting ISO image in <code>live-image-amd64.hybrid.iso</code>.</p>
+  </li>
+  <li>
+    <p><em>Profit!</em></p>
+  </li>
+</ol>
+
+<h2 id="using-the-rescue-image">Using the Rescue Image</h2>
+
+<p>By default, ZFS kernel module is not loaded, so:</p>
+
+<pre><code>sudo modprobe zfs
+</code></pre>
+
+<p>Then you need to import pools:</p>
+
+<pre><code>sudo zpool import
+</code></pre>
+
+<p>It may happen that pools were not cleanly exported. Then you’d have to import them with
+<code>-f</code> flag (a.k.a. force):</p>
+
+<pre><code>sudo zpoool import -f tank
+</code></pre>
+
+<p>You may check status of pools by:</p>
+
+<pre><code>sudo zpool status
+</code></pre>
+
+<p>Only do so if you’re absolutely sure no other system is accessing the pool at the
+time. But if you run ZFS normal PC with couple SATA disks attached like me and
+the PC is currently running the live rescue image than you should be fine.</p>
+
+<p>Mount host’s root filesystem to <code>/tmp/host</code>:</p>
+
+<pre><code>mkdir /tmp/host
+mount -t zfs tank/host/root /dev/host
+</code></pre>
+
+<p>Now you can <code>chroot /dev/host /bin/bash</code> and do what you want to create ZFS
+snapshot, whatever you wish. Just make sure that once you’re done you export
+pools so they can be cleanly imported by the host.</p>
+
+<pre><code>sudo zpool export tank
+</code></pre>
+
+<h2 id="some-comments">Some Comments</h2>
+
+<ol>
+  <li>
+    <p>The configuration for <code>lb</code> command is stored in <code>config</code> directory. The
+<code>lb config</code> with various parameters just modifies (or creates if it does
+ not exit) contents of the <code>config</code>. It may be a good idea to put the
+ <code>config</code> into under version control such as Mercurial or git.</p>
+  </li>
+  <li>
+    <p>The live image produced as above is really minimal, there’s not even a
+<code>man</code>. You may want to add more packages. To do so, simply add them
+to the <code>config/package-lists/my.list.chroot</code>. You may pull in a whole
+GNOME by adding <code>gnome-desktop</code> package (though I have not tried).</p>
+  </li>
+</ol>
+
+<p>To wrap it up, the process of building live Debian image is surprisingly easy.
+Kudos to Debian people!</p>
+
+
+          </article>
+        </div>
+      
     
       
         <div class='post'>
