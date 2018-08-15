@@ -11,7 +11,7 @@ end
 #
 compile '/posts/*.md' do
   filter :kramdown
-  filter :colorize_syntax, :default_colorizer => :pygmentsrb
+  filter :colorize_syntax, :default_colorizer => :rouge
   layout '/post.*'
 end
 
