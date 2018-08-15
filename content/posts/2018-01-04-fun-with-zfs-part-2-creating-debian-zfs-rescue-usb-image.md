@@ -18,6 +18,7 @@ same version you're already running (or planning to run) on the system one wants
 to upgrade.
 
 In case of Debian, creating such an image turned out to be very very simple...
+
 <!-- more -->
 
 ## Creating Debian Live Rescue Image with ZFS
