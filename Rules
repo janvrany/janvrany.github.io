@@ -15,11 +15,15 @@ compile '/posts/*.md' do
   layout '/post.*'
 end
 
-route '/posts/*' do
-  y,m,d,slug = /([0-9]+)\-([0-9]+)\-([0-9]+)\-([^\/]+)\.md/.match(item.identifier).captures
-
-  "/#{y}/#{m}/#{slug}.html"
+compile '/posts/*.png' do  
 end
+
+route '/posts/*' do  
+  y,m,d,slug,ext = /([0-9]+)\-([0-9]+)\-([0-9]+)\-([^\/]+)\.(md|png|jpg)/.match(item.identifier).captures
+
+  "/#{y}/#{m}/#{slug}.#{ext == 'md' ? 'html' : ext}"
+end
+
 
 route '/**/*.{html,md}' do
   if item.identifier =~ '/index.*'
