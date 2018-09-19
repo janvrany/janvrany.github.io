@@ -8,7 +8,7 @@
     
 
     <!-- you don't need to keep this, but it's cool for stats! -->
-    <meta name="generator" content="Nanoc 4.8.18">
+    <meta name="generator" content="Nanoc 4.9.3">
   </head>
   <body>
     <div id="header">
@@ -31,11 +31,32 @@
     
       
         <div class='post'>
+          <h1><a href="/2018/09/vdb-01.html">Using rr and Visual/VM Debugger to debug Smalltalk/X crash</a></h1>
+          <aside>Posted at: September 19, 2018</aside>
+          <article>
+            <h1 id="introduction">Introduction</h1>
+
+<p>This year on <a href="6">ESUG 2018 conference</a> in Cagliary, Sardinia, I gave a talk 
+showing how to debug a faulty smalltalk runtime using <a href="8">GNU debugger</a>, 
+Mozilla <a href="9">rr)[7] and (Visual / VM Debugger</a> I have shown how I have debugged
+a real bug found in Smalltalk/X - <a href="10">issue #200</a>.</p>
+
+<p>Following post is pretty much the ESUG 2018 talk in a form of an article. And, 
+by the way, the conference was great and with some very interesting talks.</p>
+
+<div class='read-more'><a href='/2018/09/vdb-01.html'>Continue reading &rsaquo;</a></div>
+          </article>
+        </div>
+        
+    
+        
+    
+      
+        <div class='post'>
           <h1><a href="/2018/01/fun-with-zfs-part-2-creating-debian-zfs-rescue-usb-image.html">Fun with ZFS, part 2: Creating Debian ZFS Rescue USB Image</a></h1>
           <aside>Posted at: January 4, 2018</aside>
           <article>
-            
-<p>While ZFS is supposedly very stable and reliable it’s not an integral part
+            <p>While ZFS is supposedly very stable and reliable it’s not an integral part
 of Linux and likely never will be (due to licensing issues). Because of that,
 upgrading kernel or the  operating system may go wrong. Well, so far in my
 case of Debian Jessie it was very smooth, but you never know. I have heard of
@@ -47,138 +68,9 @@ case, one needs a a bootable live system with ZFS ready-to-use. Ideally the
 same version you’re already running (or planning to run) on the system one wants
 to upgrade.</p>
 
-<p>In case of Debian, creating such an image turned out to be very very simple…
-<!-- more --></p>
+<p>In case of Debian, creating such an image turned out to be very very simple…</p>
 
-<h2 id="creating-debian-live-rescue-image-with-zfs">Creating Debian Live Rescue Image with ZFS</h2>
-
-<p>Debian have tool named <em>live-build</em> <a href="https://debian-live.alioth.debian.org/live-manual/stable/manual/html/live-manual.en.html">1</a>. The easies way to get is just</p>
-
-<pre><code>sudo apt-get install live-build
-</code></pre>
-
-<p>Once installed:</p>
-
-<ol>
-  <li>
-    <p>Create a (temporary) working directory where it all happens:</p>
-
-    <pre><code>mkdir /tmp/debian-streatch-live+zfs
-cd /tmp/debian-streatch-live+zfs
-</code></pre>
-  </li>
-  <li>
-    <p>Generate initial configuration:</p>
-
-    <pre><code>lb config \
-  --distribution stretch \
-  --architectures=amd64 \
-  --binary-images iso-hybrid \
-  --iso-volume "Debian Stretch ZFS Rescue Live" \
- 	   --archive-areas "main contrib" \
- 	   --linux-packages "linux-image linux-headers"
-</code></pre>
-
-    <p>We should include <em>contrib</em> in archives since that’s where ZFS packages are.
-You may want to pass <code>--backports</code> if you want to include backports
-repositories. The <code>--linux-packages</code> is to include kernel headers necessary to
-compile ZFS kernel modules.</p>
-  </li>
-  <li>
-    <p>Configure additional packages to be installed, most importantly the ZFS packages:</p>
-
-    <pre><code>echo "
-zfs-dkms
-less
-curl
-wget
-openssh-client
-openssh-server
-openssh-sftp-server
-" &gt;&gt; config/package-lists/my.list.chroot
-</code></pre>
-  </li>
-  <li>
-    <p>Build the live root filesystem:</p>
-
-    <pre><code>sudo lb bootstrap
-sudo lb chroot
-</code></pre>
-  </li>
-  <li>
-    <p>Build the hybrid ISO binary:</p>
-
-    <pre><code>sudo lb binary
-</code></pre>
-
-    <p>After this step, you should find the resulting ISO image in <code>live-image-amd64.hybrid.iso</code>.</p>
-  </li>
-  <li>
-    <p><em>Profit!</em></p>
-  </li>
-</ol>
-
-<h2 id="using-the-rescue-image">Using the Rescue Image</h2>
-
-<p>By default, ZFS kernel module is not loaded, so:</p>
-
-<pre><code>sudo modprobe zfs
-</code></pre>
-
-<p>Then you need to import pools:</p>
-
-<pre><code>sudo zpool import
-</code></pre>
-
-<p>It may happen that pools were not cleanly exported. Then you’d have to import them with
-<code>-f</code> flag (a.k.a. force):</p>
-
-<pre><code>sudo zpoool import -f tank
-</code></pre>
-
-<p>You may check status of pools by:</p>
-
-<pre><code>sudo zpool status
-</code></pre>
-
-<p>Only do so if you’re absolutely sure no other system is accessing the pool at the
-time. But if you run ZFS normal PC with couple SATA disks attached like me and
-the PC is currently running the live rescue image than you should be fine.</p>
-
-<p>Mount host’s root filesystem to <code>/tmp/host</code>:</p>
-
-<pre><code>mkdir /tmp/host
-mount -t zfs tank/host/root /dev/host
-</code></pre>
-
-<p>Now you can <code>chroot /dev/host /bin/bash</code> and do what you want to create ZFS
-snapshot, whatever you wish. Just make sure that once you’re done you export
-pools so they can be cleanly imported by the host.</p>
-
-<pre><code>sudo zpool export tank
-</code></pre>
-
-<h2 id="some-comments">Some Comments</h2>
-
-<ol>
-  <li>
-    <p>The configuration for <code>lb</code> command is stored in <code>config</code> directory. The
-<code>lb config</code> with various parameters just modifies (or creates if it does
- not exit) contents of the <code>config</code>. It may be a good idea to put the
- <code>config</code> into under version control such as Mercurial or git.</p>
-  </li>
-  <li>
-    <p>The live image produced as above is really minimal, there’s not even a
-<code>man</code>. You may want to add more packages. To do so, simply add them
-to the <code>config/package-lists/my.list.chroot</code>. You may pull in a whole
-GNOME by adding <code>gnome-desktop</code> package (though I have not tried).</p>
-  </li>
-</ol>
-
-<p>To wrap it up, the process of building live Debian image is surprisingly easy.
-Kudos to Debian people!</p>
-
-
+<div class='read-more'><a href='/2018/01/fun-with-zfs-part-2-creating-debian-zfs-rescue-usb-image.html'>Continue reading &rsaquo;</a></div>
           </article>
         </div>
         
@@ -188,8 +80,7 @@ Kudos to Debian people!</p>
           <h1><a href="/2017/08/csr-mini-howto.html">How to generate TSL/SSL certificate and get it signed</a></h1>
           <aside>Posted at: August 17, 2017</aside>
           <article>
-            
-<h2 id="introduction">Introduction</h2>
+            <h2 id="introduction">Introduction</h2>
 
 <p>I recently had a need to provide an access to my private <a href="https://openvpn.net/">OpenVPN</a> server
 to couple of friends / colleagues. I ran my very own <a href="https://en.wikipedia.org/wiki/Certificate_authority">CA</a> for the purpose
@@ -218,8 +109,7 @@ That’s the question…I hope this would shed some light on this.</p>
           <h1><a href="/2017/06/stx-libjava-used-for-real.html">STX:LIBJAVA used for real</a></h1>
           <aside>Posted at: June 7, 2017</aside>
           <article>
-            
-<p>No long ago I learned that <a href="https://swing.fit.cvut.cz/projects/stx-jv">Smalltalk/X jv-branch</a> and <a href="https://swing.fit.cvut.cz/projects/stx-libjava">STX:LIBJAVA</a> are 
+            <p>No long ago I learned that <a href="https://swing.fit.cvut.cz/projects/stx-jv">Smalltalk/X jv-branch</a> and <a href="https://swing.fit.cvut.cz/projects/stx-libjava">STX:LIBJAVA</a> are 
 used for real, in “industry”.</p>
 
 <div class='read-more'><a href='/2017/06/stx-libjava-used-for-real.html'>Continue reading &rsaquo;</a></div>
@@ -232,8 +122,7 @@ used for real, in “industry”.</p>
           <h1><a href="/2017/06/unamaged-delegates.html">Unmanaged delegates in CLR</a></h1>
           <aside>Posted at: June 7, 2017</aside>
           <article>
-            
-<p>As we progressed with <a href="/2016/10/a-taste-of-dotNET-in-Bee-Smalltalk.html">CLR interop for Bee Smalltalk</a>, a need to create 
+            <p>As we progressed with <a href="/2016/10/a-taste-of-dotNET-in-Bee-Smalltalk.html">CLR interop for Bee Smalltalk</a>, a need to create 
 a delegate for an unmanaged code arose. By “a delegate for an unmanaged code” I mean
 an instance of a <a href="https://docs.microsoft.com/en-us/dotnet/articles/csharp/programming-guide/delegates/">delegate</a> object that can be passed to CLR code which, when
 called, would execute an unmanaged code. In our case a Smalltalk code.</p>
@@ -261,8 +150,7 @@ useful too.</p>
           <h1><a href="/2017/01/debugging-mixed-native-clr-application-in-windbg.html">Debugging mixed native-CLR application in WinDBG</a></h1>
           <aside>Posted at: January 25, 2017</aside>
           <article>
-            
-<p>While working on <a href="/2016/10/a-taste-of-dotNET-in-Bee-Smalltalk.html">CLR interop for Bee Smalltalk</a>, things go wrong every now and
+            <p>While working on <a href="/2016/10/a-taste-of-dotNET-in-Bee-Smalltalk.html">CLR interop for Bee Smalltalk</a>, things go wrong every now and
 again. This is tricky to debug, at least for me, as there is Smalltalk code,
 then some native C++ code (CLR’s CCW and all this stuff) and finally managed
 CLR code.</p>
@@ -283,8 +171,7 @@ something went wrong - in case you don’t know that yet.</p>
           <h1><a href="/2016/10/a-taste-of-dotNET-in-Bee-Smalltalk.html">A taste of .NET in Bee Smalltalk</a></h1>
           <aside>Posted at: October 13, 2016</aside>
           <article>
-            
-<p>Couple days ago, I finally managed to get .NET to do a job for me. Not much but 
+            <p>Couple days ago, I finally managed to get .NET to do a job for me. Not much but 
 still .NET did its job and did it well. The following text shows how to call
 .NET code from Bee Smalltalk and retrieve results. I won’t go into technical 
 details on how it’s done internally, rather show the usage from user point of
@@ -301,8 +188,7 @@ Bee Smalltalk.</p>
           <h1><a href="/2016/10/fun-with-zfs-part-1-installing-debian-jessie-on-zfs-root.html">Fun with ZFS, part 1: Installing Debian Jessie on ZFS Root</a></h1>
           <aside>Posted at: October 6, 2016</aside>
           <article>
-            
-<h2 id="preface">Preface</h2>
+            <h2 id="preface">Preface</h2>
 
 <p>Couple weeks ago I decided to make myself a small home server. Home sever, 
 sounds weird, doesn’t it? Home’s not work place, no?</p>
@@ -321,8 +207,7 @@ streaming movies or even playing on TV, nothing like this. But I need a  storage
           <h1><a href="/2016/10/first-post.html">First Post</a></h1>
           <aside>Posted at: October 6, 2016</aside>
           <article>
-            
-<p>I’m interested in many things. I have many ideas, all of them seem cool 
+            <p>I’m interested in many things. I have many ideas, all of them seem cool 
 initially but as soon as I try to explain them, most of them turn out to be
 rubbish.</p>
 

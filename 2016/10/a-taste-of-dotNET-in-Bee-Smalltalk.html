@@ -8,7 +8,7 @@
     
 
     <!-- you don't need to keep this, but it's cool for stats! -->
-    <meta name="generator" content="Nanoc 4.8.18">
+    <meta name="generator" content="Nanoc 4.9.3">
   </head>
   <body>
     <div id="header">
@@ -31,8 +31,7 @@
     <h1>A taste of .NET in Bee Smalltalk</h1>
     <aside>Posted at: October 13, 2016</aside>
     <article>
-      
-<p>Couple days ago, I finally managed to get .NET to do a job for me. Not much but 
+      <p>Couple days ago, I finally managed to get .NET to do a job for me. Not much but 
 still .NET did its job and did it well. The following text shows how to call
 .NET code from Bee Smalltalk and retrieve results. I won’t go into technical 
 details on how it’s done internally, rather show the usage from user point of
@@ -74,28 +73,28 @@ parse it and generate HTML myself, but that’s too much manual work. I’d rath
 write a simple XSL transformation <a href="https://www.w3.org/TR/xslt20/">1</a> and let XSLT processor to do the hard job. 
 This is, after all, what XSL was designed for. The <code>cd.xsl</code> looks like:</p>
 
-<pre><code class="language-xslt"><span class="cp">&lt;?xml version="1.0" encoding="ISO-8859-1"?&gt;</span>
-<span class="k">&lt;xsl:stylesheet</span> <span class="na">version=</span><span class="s">"1.0"</span> <span class="na">xmlns:xsl=</span><span class="s">"http://www.w3.org/1999/XSL/Transform"</span><span class="nt">&gt;</span>
-<span class="k">&lt;xsl:template</span> <span class="na">match=</span><span class="s">"/"</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;html&gt;</span>
-    <span class="nt">&lt;body&gt;</span>
-    <span class="nt">&lt;h2&gt;</span>My CD Collection<span class="nt">&lt;/h2&gt;</span>
-      <span class="nt">&lt;table</span> <span class="na">border=</span><span class="s">"1"</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;tr</span> <span class="na">bgcolor=</span><span class="s">"#9acd32"</span><span class="nt">&gt;</span>
-          <span class="nt">&lt;th&gt;</span>Title<span class="nt">&lt;/th&gt;</span>
-          <span class="nt">&lt;th&gt;</span>Artist<span class="nt">&lt;/th&gt;</span>
-        <span class="nt">&lt;/tr&gt;</span>
-        <span class="k">&lt;xsl:for-each</span> <span class="na">select=</span><span class="s">"catalog/cd"</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;tr&gt;</span>
-          <span class="nt">&lt;td&gt;</span><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">"title"</span><span class="nt">/&gt;&lt;/td&gt;</span>
-          <span class="nt">&lt;td&gt;</span><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">"artist"</span><span class="nt">/&gt;&lt;/td&gt;</span>
-        <span class="nt">&lt;/tr&gt;</span>
-        <span class="k">&lt;/xsl:for-each&gt;</span>
-      <span class="nt">&lt;/table&gt;</span>
-    <span class="nt">&lt;/body&gt;</span>
-  <span class="nt">&lt;/html&gt;</span>
-<span class="k">&lt;/xsl:template&gt;</span>
-<span class="k">&lt;/xsl:stylesheet&gt;</span></code></pre>
+<pre><code class="language-xslt">&lt;?xml version="1.0" encoding="ISO-8859-1"?&gt;
+&lt;xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"&gt;
+&lt;xsl:template match="/"&gt;
+  &lt;html&gt;
+    &lt;body&gt;
+    &lt;h2&gt;My CD Collection&lt;/h2&gt;
+      &lt;table border="1"&gt;
+        &lt;tr bgcolor="#9acd32"&gt;
+          &lt;th&gt;Title&lt;/th&gt;
+          &lt;th&gt;Artist&lt;/th&gt;
+        &lt;/tr&gt;
+        &lt;xsl:for-each select="catalog/cd"&gt;
+        &lt;tr&gt;
+          &lt;td&gt;&lt;xsl:value-of select="title"/&gt;&lt;/td&gt;
+          &lt;td&gt;&lt;xsl:value-of select="artist"/&gt;&lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;/xsl:for-each&gt;
+      &lt;/table&gt;
+    &lt;/body&gt;
+  &lt;/html&gt;
+&lt;/xsl:template&gt;
+&lt;/xsl:stylesheet&gt;</code></pre>
 
 <p>There’s no (native) implementation of XSLT processor in Bee (and if 
 fact in no Smalltalk I know of). However .NET contains XSLT processor <a href="https://msdn.microsoft.com/en-us/library/system.xml.xsl.xslcompiledtransform(v=vs.110).aspx">2</a> so 
@@ -116,7 +115,7 @@ the plan is simple:</p>
 
 <p>In Bee:</p>
 
-<pre><code class="language-smalltalk">[
+<pre><code class="language-smalltalk"><span class="p">[</span>
     <span class="c">"load data as instance"</span>
     
     <span class="nv">data</span> <span class="o">:=</span> <span class="nc">System</span><span class="p">.</span><span class="nc">Xml</span><span class="p">.</span><span class="nc">XPath</span><span class="p">.</span><span class="nc">XPathDocument</span> <span class="nf">new:</span> <span class="s">'cd.xml'</span><span class="p">.</span>
@@ -134,12 +133,12 @@ the plan is simple:</p>
 
     <span class="c">"retrieve resulting HTML"</span>
     <span class="o">^</span> <span class="nv">buffer</span> <span class="nf">ToString</span><span class="p">.</span>
-] <span class="nf">on:</span> <span class="nc">System</span><span class="p">.</span><span class="nc">IO</span><span class="p">.</span><span class="nc">FileNotFoundException</span> <span class="nf">do:</span> [<span class="o">:</span><span class="nv">fnfex</span> <span class="o">|</span>
+<span class="p">]</span> <span class="nf">on:</span> <span class="nc">System</span><span class="p">.</span><span class="nc">IO</span><span class="p">.</span><span class="nc">FileNotFoundException</span> <span class="nf">do:</span> <span class="p">[</span><span class="o">:</span><span class="nv">fnfex</span> <span class="p">|</span>
     <span class="c">"Not a great handler, but for a demo it will do"</span>
     <span class="nc">TaskDialog</span> <span class="nf">warning:</span> <span class="s">'OOPS, file''s missing: '</span><span class="nf">,</span> <span class="nv">fnfex</span> <span class="nf">FileName</span><span class="p">.</span>
-] <span class="nf">on:</span> <span class="nc">System</span><span class="p">.</span><span class="nc">Xml</span><span class="p">.</span><span class="nc">Xsl</span><span class="p">.</span><span class="nc">XsltException</span> <span class="nf">do:</span>[<span class="o">:</span><span class="nv">xsltex</span> <span class="o">|</span>
+<span class="p">]</span> <span class="nf">on:</span> <span class="nc">System</span><span class="p">.</span><span class="nc">Xml</span><span class="p">.</span><span class="nc">Xsl</span><span class="p">.</span><span class="nc">XsltException</span> <span class="nf">do:</span><span class="p">[</span><span class="o">:</span><span class="nv">xsltex</span> <span class="p">|</span>
     <span class="nc">TaskDialog</span> <span class="nf">warning:</span> <span class="s">'OOPS, transformation failed: '</span> <span class="nf">,</span> <span class="nv">xsltex</span> <span class="nf">Message</span>
-]<span class="p">.</span>
+<span class="p">].</span>
 <span class="c">"job done"</span></code></pre>
 
 <p>Much like in C#, isn’t it? That’s the goal. Bee’s CLR interop does the
@@ -172,13 +171,13 @@ deals with exceptions).</li>
 <span class="c">"..."</span>
 <span class="nf">generate</span>  
   <span class="nf">|</span> <span class="nv">data</span> <span class="nf">buffer</span> <span class="nf">writer</span> <span class="nf">xslt</span> <span class="nf">|</span>
-  <span class="nv">data</span> <span class="o">:=</span> <span class="nc">XPathDocument</span> <span class="nb">new</span>(<span class="s">'cd.xml'</span>)<span class="p">.</span>    
-  <span class="nv">buffer</span> <span class="o">:=</span> <span class="nc">System</span><span class="p">.</span><span class="nc">Text</span><span class="p">.</span><span class="nc">StringBuilder</span> <span class="nb">new</span>()<span class="p">.</span>
-  <span class="nv">writer</span> <span class="o">:=</span> <span class="nc">XmlWriter</span> <span class="nf">Create</span>(<span class="nv">buffer</span>)<span class="p">.</span>    
-  <span class="nv">xslt</span> <span class="o">:=</span> <span class="nc">XslCompiledTransform</span> <span class="nb">new</span>()<span class="p">.</span>
-  <span class="nv">xslt</span> <span class="nf">Load</span>(<span class="s">'cd.xsl'</span>)<span class="p">.</span>      
-  <span class="nv">xslt</span> <span class="nf">Transform</span>(<span class="nv">data</span><span class="nf">,</span> <span class="bp">nil</span><span class="nf">,</span> <span class="nv">writer</span><span class="nf">,</span> <span class="bp">nil</span>)<span class="p">.</span>      
-  <span class="o">^</span> <span class="nv">buffer</span> <span class="nf">ToString</span>()<span class="p">.</span></code></pre>
+  <span class="nv">data</span> <span class="o">:=</span> <span class="nc">XPathDocument</span> <span class="nb">new</span><span class="p">(</span><span class="s">'cd.xml'</span><span class="p">).</span>    
+  <span class="nv">buffer</span> <span class="o">:=</span> <span class="nc">System</span><span class="p">.</span><span class="nc">Text</span><span class="p">.</span><span class="nc">StringBuilder</span> <span class="nb">new</span><span class="p">().</span>
+  <span class="nv">writer</span> <span class="o">:=</span> <span class="nc">XmlWriter</span> <span class="nf">Create</span><span class="p">(</span><span class="nv">buffer</span><span class="p">).</span>    
+  <span class="nv">xslt</span> <span class="o">:=</span> <span class="nc">XslCompiledTransform</span> <span class="nb">new</span><span class="p">().</span>
+  <span class="nv">xslt</span> <span class="nf">Load</span><span class="p">(</span><span class="s">'cd.xsl'</span><span class="p">).</span>      
+  <span class="nv">xslt</span> <span class="nf">Transform</span><span class="p">(</span><span class="nv">data</span><span class="nf">,</span> <span class="bp">nil</span><span class="nf">,</span> <span class="nv">writer</span><span class="nf">,</span> <span class="bp">nil</span><span class="p">).</span>      
+  <span class="o">^</span> <span class="nv">buffer</span> <span class="nf">ToString</span><span class="p">().</span></code></pre>
 
 <p>Note that:</p>
 
@@ -208,9 +207,9 @@ So far I worked only with .NET 4.5 but generally speaking, .NET 4.x should work
 just the same. To load CLR, perform following Mumbo Jumbo:</p>
 
 <pre><code class="language-smalltalk"><span class="nv">runtimeInfo</span> <span class="o">:=</span> <span class="nc">ICLRMetaHostClient</span> <span class="nf">newInstance</span> <span class="nf">defaultRuntime</span><span class="p">.</span>
-<span class="nv">runtimeInfo</span> <span class="nf">isLoaded</span> <span class="nb">ifFalse:</span>[
+<span class="nv">runtimeInfo</span> <span class="nf">isLoaded</span> <span class="nb">ifFalse:</span><span class="p">[</span>
   <span class="nv">runtimeInfo</span> <span class="nf">getCLRHost</span> <span class="nf">Start</span>
-]<span class="p">.</span>
+<span class="p">].</span>
 <span class="nv">runtimeInfo</span> <span class="nf">getCorHost</span> <span class="nf">DefaultDomain</span><span class="p">.</span></code></pre>
 
 <p>Another question is from where the classes like <code>System.Xml.Xsl.XslCompiledTransform</code>
@@ -284,6 +283,12 @@ Many thanks for letting me to work on this and for their support. It has been
   </div>
   
     <div class="column width1_4">
+      
+        
+          <h2><a href="/2018/09/vdb-01.html">Using rr and Visual/VM Debugger to debug Smalltalk/X crash</a></h2>      
+        
+      
+        
       
         
           <h2><a href="/2018/01/fun-with-zfs-part-2-creating-debian-zfs-rescue-usb-image.html">Fun with ZFS, part 2: Creating Debian ZFS Rescue USB Image</a></h2>      

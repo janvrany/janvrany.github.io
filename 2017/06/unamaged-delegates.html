@@ -8,7 +8,7 @@
     
 
     <!-- you don't need to keep this, but it's cool for stats! -->
-    <meta name="generator" content="Nanoc 4.8.18">
+    <meta name="generator" content="Nanoc 4.9.3">
   </head>
   <body>
     <div id="header">
@@ -31,8 +31,7 @@
     <h1>Unmanaged delegates in CLR</h1>
     <aside>Posted at: June 7, 2017</aside>
     <article>
-      
-<p>As we progressed with <a href="/2016/10/a-taste-of-dotNET-in-Bee-Smalltalk.html">CLR interop for Bee Smalltalk</a>, a need to create 
+      <p>As we progressed with <a href="/2016/10/a-taste-of-dotNET-in-Bee-Smalltalk.html">CLR interop for Bee Smalltalk</a>, a need to create 
 a delegate for an unmanaged code arose. By “a delegate for an unmanaged code” I mean
 an instance of a <a href="https://docs.microsoft.com/en-us/dotnet/articles/csharp/programming-guide/delegates/">delegate</a> object that can be passed to CLR code which, when
 called, would execute an unmanaged code. In our case a Smalltalk code.</p>
@@ -100,7 +99,7 @@ when it does not work are not documented.</p>
 
 <pre><code class="language-csharp"><span class="k">public</span> <span class="k">static</span> <span class="n">Delegate</span> <span class="nf">GetDelegateForFunctionPointer32</span><span class="p">(</span><span class="n">Int32</span> <span class="n">ptr</span><span class="p">,</span> <span class="n">Type</span> <span class="n">t</span><span class="p">)</span> 
 <span class="p">{</span>
-    <span class="k">return</span> <span class="n">Marshal</span><span class="p">.</span><span class="n">GetDelegateForFunctionPointer</span><span class="p">((</span><span class="n">IntPtr</span><span class="p">)</span><span class="n">ptr</span><span class="p">,</span> <span class="n">t</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">Marshal</span><span class="p">.</span><span class="nf">GetDelegateForFunctionPointer</span><span class="p">((</span><span class="n">IntPtr</span><span class="p">)</span><span class="n">ptr</span><span class="p">,</span> <span class="n">t</span><span class="p">);</span>
 <span class="p">}</span></code></pre>
 
 <h2 id="invocation-of-the-delegate-the-tricky-bit">Invocation of the delegate (the tricky bit)</h2>
@@ -125,7 +124,7 @@ enough.</p>
 <span class="k">public</span> <span class="k">delegate</span> <span class="k">void</span> <span class="nf">DintRvoid</span><span class="p">(</span><span class="kt">int</span> <span class="n">arg</span><span class="p">);</span>
 
 <span class="c1">// method that takes a delegate ob above type and calls it </span>
-<span class="k">public</span> <span class="k">static</span> <span class="k">void</span> <span class="nf">CallDintRvoid</span><span class="p">(</span><span class="n">DintRvoid</span> <span class="n">del</span><span class="p">,</span> <span class="kt">int</span> <span class="n">arg</span><span class="p">)</span> <span class="p">{</span> <span class="n">del</span><span class="p">(</span><span class="n">arg</span><span class="p">);</span> <span class="p">}</span></code></pre>
+<span class="k">public</span> <span class="k">static</span> <span class="k">void</span> <span class="nf">CallDintRvoid</span><span class="p">(</span><span class="n">DintRvoid</span> <span class="n">del</span><span class="p">,</span> <span class="kt">int</span> <span class="n">arg</span><span class="p">)</span> <span class="p">{</span> <span class="nf">del</span><span class="p">(</span><span class="n">arg</span><span class="p">);</span> <span class="p">}</span></code></pre>
 
 <p>Here’s the code in full that creates the delegate and call <code>CallDintRvoid()</code> 
 method (which in turn call the passed delegate):</p>
@@ -157,7 +156,7 @@ with some real object (i.e., with a reference type in CLR terminology):</p>
 
 <pre><code class="language-csharp"><span class="k">public</span> <span class="k">delegate</span> <span class="k">void</span> <span class="nf">DObjectRvoid</span><span class="p">(</span><span class="n">Object</span> <span class="n">arg</span><span class="p">);</span>
 
-<span class="k">public</span> <span class="k">static</span> <span class="k">void</span> <span class="nf">CallDObjectRvoid</span><span class="p">(</span><span class="n">DObjectRvoid</span> <span class="n">del</span><span class="p">,</span> <span class="n">Object</span> <span class="n">arg</span><span class="p">)</span> <span class="p">{</span> <span class="n">del</span><span class="p">(</span><span class="n">arg</span><span class="p">);</span> <span class="p">}</span></code></pre>
+<span class="k">public</span> <span class="k">static</span> <span class="k">void</span> <span class="nf">CallDObjectRvoid</span><span class="p">(</span><span class="n">DObjectRvoid</span> <span class="n">del</span><span class="p">,</span> <span class="n">Object</span> <span class="n">arg</span><span class="p">)</span> <span class="p">{</span> <span class="nf">del</span><span class="p">(</span><span class="n">arg</span><span class="p">);</span> <span class="p">}</span></code></pre>
 
 <p>And the code that call the above:</p>
 
@@ -204,7 +203,7 @@ using <code>__stdcall</code> calling convention so all parameters are on the sta
 
 <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> <span class="nf">CallDuintObjectuintRvoid</span><span class="p">(</span><span class="n">DuintObjectuintRvoid</span> <span class="n">del</span><span class="p">,</span> <span class="kt">uint</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">Object</span> <span class="n">arg2</span><span class="p">,</span> <span class="kt">uint</span> <span class="n">arg3</span><span class="p">)</span> 
 <span class="p">{</span> 
-    <span class="n">del</span><span class="p">(</span><span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">,</span> <span class="n">arg3</span><span class="p">);</span> 
+    <span class="nf">del</span><span class="p">(</span><span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">,</span> <span class="n">arg3</span><span class="p">);</span> 
 <span class="p">}</span></code></pre>
 
 <p>This is essentially the same as in previous case only that the <code>Object</code> argument (<code>arg2</code>)
@@ -490,7 +489,7 @@ a delegate that takes, <code>System.AppDomain</code> as a formal parameter:</p>
 
 <pre><code class="language-csharp"><span class="k">public</span> <span class="k">delegate</span> <span class="k">void</span> <span class="nf">DuintAppDomainuintRvoid</span><span class="p">(</span><span class="kt">uint</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">AppDomain</span> <span class="n">arg2</span><span class="p">,</span> <span class="kt">uint</span> <span class="n">arg3</span><span class="p">);</span>
 
-<span class="k">public</span> <span class="k">static</span> <span class="k">void</span> <span class="nf">CallDuintAppDomainuintRvoid</span><span class="p">(</span><span class="n">DuintAppDomainuintRvoid</span> <span class="n">del</span><span class="p">,</span> <span class="kt">uint</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">AppDomain</span> <span class="n">arg2</span><span class="p">,</span> <span class="kt">uint</span> <span class="n">arg3</span><span class="p">)</span> <span class="p">{</span> <span class="n">del</span><span class="p">(</span><span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">,</span> <span class="n">arg3</span><span class="p">);</span> <span class="p">}</span></code></pre>
+<span class="k">public</span> <span class="k">static</span> <span class="k">void</span> <span class="nf">CallDuintAppDomainuintRvoid</span><span class="p">(</span><span class="n">DuintAppDomainuintRvoid</span> <span class="n">del</span><span class="p">,</span> <span class="kt">uint</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">AppDomain</span> <span class="n">arg2</span><span class="p">,</span> <span class="kt">uint</span> <span class="n">arg3</span><span class="p">)</span> <span class="p">{</span> <span class="nf">del</span><span class="p">(</span><span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">,</span> <span class="n">arg3</span><span class="p">);</span> <span class="p">}</span></code></pre>
 
 <p>The test code is the same as in previous case, all we need is just to create
 a delegate typed as <code>DuintAppDomainuintRvoid</code> (rather than <code>DuintObjectuintRvoid</code>
@@ -588,6 +587,12 @@ unmarshaling.</p>
   </div>
   
     <div class="column width1_4">
+      
+        
+          <h2><a href="/2018/09/vdb-01.html">Using rr and Visual/VM Debugger to debug Smalltalk/X crash</a></h2>      
+        
+      
+        
       
         
           <h2><a href="/2018/01/fun-with-zfs-part-2-creating-debian-zfs-rescue-usb-image.html">Fun with ZFS, part 2: Creating Debian ZFS Rescue USB Image</a></h2>      

@@ -1,0 +1,453 @@
+<!DOCTYPE HTML>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Jan Vraný - Using rr and Visual/VM Debugger to debug Smalltalk/X crash</title>
+    <link rel="stylesheet" href="/pygments.css">
+    <link rel="stylesheet" href="/stylesheet.css">
+    
+
+    <!-- you don't need to keep this, but it's cool for stats! -->
+    <meta name="generator" content="Nanoc 4.9.3">
+  </head>
+  <body>
+    <div id="header">
+      <div id="jv">
+        Jan Vraný
+      </div>
+
+    	<ul>
+    	<li><a href="/">home</a></li>
+    	<li><a href="/posts">blog</a></li>
+        <li><a href="/projects">projects</a></li>                      
+        <li><a href="https://bitbucket.org/janvrany/">repositories</a></li>
+        <li><a href="/contact">contact</a></li>        
+        <li><a href="/cv.pdf">cv</a></li>
+    	</ul>
+    </div>
+    <div id="main">
+      
+  <div class="column width3_4 post">
+    <h1>Using rr and Visual/VM Debugger to debug Smalltalk/X crash</h1>
+    <aside>Posted at: September 19, 2018</aside>
+    <article>
+      <h1 id="introduction">Introduction</h1>
+
+<p>This year on <a href="6">ESUG 2018 conference</a> in Cagliary, Sardinia, I gave a talk 
+showing how to debug a faulty smalltalk runtime using <a href="8">GNU debugger</a>, 
+Mozilla <a href="9">rr)[7] and (Visual / VM Debugger</a> I have shown how I have debugged
+a real bug found in Smalltalk/X - <a href="10">issue #200</a>.</p>
+
+<p>Following post is pretty much the ESUG 2018 talk in a form of an article. And, 
+by the way, the conference was great and with some very interesting talks.</p>
+
+<!-- more -->
+
+<h1 id="for-those-who-want-to-try-it-all-themselves">For those who want to try it all themselves</h1>
+
+<p>If you want to try all what will follow yourself, you need to get few things 
+ready.</p>
+
+<ol>
+  <li>
+    <p>First, you need a Linux system on x86_64 CPU. I use Debian but any 
+reasonably modern Linux distro.</p>
+  </li>
+  <li>
+    <p>Then you need to build your own Smalltalk/X to exhibit the problem, since
+it has been long time fixed. To build Smalltalk/X, follow 
+<a href="11">build instructions</a>. However, after <code>rake checkout</code> and before 
+commencing <code>rake compile</code>, you need to revert revert commit <a href="1">574962856f04</a></p>
+
+    <p>pushd build/stx/libbasic
+   hg backout –no-commit 574962856f04      <br>
+   popd</p>
+  </li>
+  <li>
+    <p>To get all features of <em>Visual / VM Debugger</em> (VDB for short), you’d also 
+need to build most recent <em>GNU Debugger</em> (<em>GDB</em> for short) from <a href="12">master</a>
+branch. Once built, configure <em>VDB</em> to use it:</p>
+
+    <p>mkdir -p ~/.smalltalk
+   echo “UserPreferences current vdbGdbExecutable:’/path/to/built/gdb/gdb’.” » ~/.smalltalk/settings.stx</p>
+  </li>
+  <li>
+    <p>Finally, you would need <em>rr</em>. The easiest is to install it using package
+manager, e.g.:</p>
+
+    <p>apt-get install rr</p>
+  </li>
+</ol>
+
+<h1 id="preparation">Preparation</h1>
+
+<p>The very first step - and the most tricky if you ask me - is to prepare a 
+reproducible and minimal test case. In this case the bug report contains such
+a test case, so all we need to do is copy-paste-hack it into <code>.st</code> file so
+we can easily run our test case from a command line. So an <code>issue_200.st</code> would
+be like:</p>
+
+<pre><code>| t | 
+t := Unicode16String new: 46. 
+[ 
+    1 to: 30 do:[:i | 
+        Stderr nextPutLine: i printString , ' - ', (t size*2) printString. 
+        Stderr flush.            
+        t := t , t.
+    ] 
+] on: Error do:[:ex | 
+    Stdout nextPutLine: ex description.
+    Smalltalk exit: 1.
+]. 
+Stdout nextPutLine: 'Passed'.
+Smalltalk exit:0"
+</code></pre>
+
+<p>Now let’s run the code above - if there’s a problem, it should crash:</p>
+
+<pre><code>cd build\projects\smalltalk
+./smalltalk --record --abortOnSIGSEGV --execute issue_200.st
+</code></pre>
+
+<p>The <code>--execute</code> tells Smalltalk/X to run the code in given file. The <code>--abortOnSIGSEGV</code>
+tells the VM to <code>abort()</code> when segmentation violation. Normally, the VM just raises
+a smalltalk exception and lets smalltalk code to handle it. Finally, <code>--record</code> 
+tells the launcher script to record and save whole execution (including the crash) so
+we can later use this record for debugging purposes.</p>
+
+<p>The output should look something like:</p>
+
+<pre><code>rr: Saving execution to trace directory `/home/jv/.local/share/rr/stx-33'.
+1 - 92
+2 - 184
+3 - 368
+4 - 736
+5 - 1472
+6 - 2944
+7 - 5888
+8 - 11776
+9 - 23552
+10 - 47104
+11 - 94208
+12 - 188416
+13 - 376832
+14 - 753664
+15 - 1507328
+16 - 3014656
+17 - 6029312
+18 - 12058624
+19 - 24117248
+20 - 48234496
+21 - 96468992
+22 - 192937984
+23 - 385875968
+24 - 771751936
+25 - 1543503872
+VM [sigsegv]: sigNo 11
+VM [error] (18-08-04 13:11:45): sigsegv
+ new: 7f7d47a55000 .. 7f7d47c55000  old: 55d85d667000 .. 55d9cf44f000
+ surv: 7f7d47c57000 .. 7f7d47c57000 .. 7f7d47e57000
+VM [error] (18-08-04 13:11:45): in process 5
+last selector: replaceFrom:to:with:startingAt:
+last class: ArrayedCollection
+sigsegv 4631
+sigsegv 4639
+os signal interrupt
+</code></pre>
+
+<h2 id="debugging">Debugging</h2>
+
+<p>Once we have recorded the crash, we’re ready for debugging. So, start a 
+“Visual / VM Debugger” (VDB for short) and connect to a replay server. Smalltalk/X launcher
+script can automate all this so it’s as easy as:</p>
+
+<pre><code>./smalltalk --replay --vdb
+</code></pre>
+
+<p>The <code>--replay</code> options tell the launcher script to replay <em>last</em>
+recorded execution, <code>--vdb</code> opens VDB and connects it to replay server.
+Not the (simulated) execution state is at process entry point (even
+before <code>main()</code> is executed).</p>
+
+<p>Let just run it so we can see where it crashed. That’d be a good starting point 
+anyway. So issue a <code>c</code> CLI command or use menu <em>Run / Resume</em> (or press <em>F9</em>, 
+whatever you prefer). This would take a while but then it finally crashes:</p>
+
+<p><img src="vdb-01-01.png" alt="Screenshot of VDB (1)"></p>
+
+<p>Here’s an excerpt from stack trace (from the screenshot):</p>
+
+<pre><code>/home/jv/Priv.../smalltalk/stx [stopped]
+  Thread 15903.15903 [stopped]
+     0 0x00007FD44066D025 [RUN] __lookup_lookup (runtime.h:311)
+     1 0x00007FD44066D025 [RUN] __externalLooupCheck (send.c:3092)
+     2 0x00007FD44066D025 [RUN] _SEND1 (send.c:3329)
+     3 0x00007FD44605997E [S-C] SequenceableCollection &gt;&gt; #replaceFrom:to:with:startingAt: (SequenceableCollection.st:6587)
+</code></pre>
+
+<p>…and from the source (from the screenshot)…</p>
+
+<pre><code>...
+if (lookup == nil) {
+    int cnt = 0;
+    while (current_cls != nil) {
+&gt;       lookup = __ClassInstPtr(current_cls)-&gt;c_lookupObject;
+        if (lookup != nil) break;
+        if (++cnt &gt; 10000) goto cycle;
+        current_cls =__ClassInstPtr(current_cls)-&gt;c_superclass;
+    }
+}  
+...
+</code></pre>
+
+<p>Now lets talk about what we see:</p>
+
+<p>The <code>__lookup_lookup()</code> (see above stack trace) is an internal VM routine 
+that looks up a lookup object.  This object is used to lookup a method to execute. 
+Sounds complicated but for now it does not matter much what it does. 
+If you’re interested, you may find details in <a href="https://link.springer.com/chapter/10.1007/978-3-642-30561-0_10">2</a>. The important thing 
+is that it crashes when dereferencing <code>current_cls</code>. If you look at
+variables (top-right pane in VDB window), you can immediately see that
+<code>current_cls</code> is somewhat wrong:</p>
+
+<pre><code>current_cls '0x0020002000200020 (invalid object: MemoryError: Cannot access memory at address 0x20002000200020)'
+</code></pre>
+
+<p>If you look closer at the object reference value, you see it’s quite funny. 
+Let’s walk down the stack to see from where this funny value came from. 
+Frame 2 <code>__SEND1()</code> is the place to look. When you select the frame in VDB
+window, again you immediately see that value of <code>self</code> is somewhat wrong:</p>
+
+<p><img src="vdb-01-02.png" alt="Screenshot of VDB (2)"></p>
+
+<p>To stress the fact that something is wrong with the value of <code>self</code>, VDB shows it in red. 
+See the value of a class? (TODO: Add screenshot)
+The <code>self</code> reference itself is kind of OK. I mean it points to an object in object heap,
+but its class is wrong. From the looks of it something is overwriting the contents of the
+object (<code>self</code>) with some nonsense.</p>
+
+<p>Now comes the interesting part. The memory has already been overwritten, 
+possibly many many cycles in the past, so how to find out what code exactly
+overwrites it? This is where all the recording and replaying becomes invaluable. 
+The replay server allows one to go backward in time.</p>
+
+<p>So, we set up a watchpoint on <code>self</code>s class slot. In Smalltalk/X, object’s class
+is stored in first word of the object header. You can have a look in <code>stc.h</code> to
+see the C definition or, easier, use <code>ptype</code> <a href="https://sourceware.org/gdb/current/onlinedocs/gdb/Symbols.html#Symbols">3</a> command:</p>
+
+<pre><code>(vdb) ptype selftype = struct __instance {    
+    OBJ o_class;
+    unsigned int o_size;    
+    unsigned char o_space;    
+    char o_flags;    
+    unsigned char o_age;    
+    unsigned char o_hashLow;    
+    OBJ i_instvars[1];
+} *
+</code></pre>
+
+<p>To set the watchpoint:</p>
+
+<pre><code>(vdb) p self
+$2 = 0x0000564ff0482260 (invalid class: 0x0020002000200020)
+(vdb) watch *0x0000564ff0482260
+Hardware watchpoint 1: *0x0000564ff0482260
+</code></pre>
+
+<p>We must use raw object reference value rather than symbolic one (like <code>watch &amp;(self-&gt;o_class)</code>) because the watchpoint would become invalid as soon as 
+execution leaves <code>_SEND4()</code> since <code>self</code> is defined only in its scope. 
+Now we just let the program to run in “reverse”. We are going back in time until the
+watchpoint hits and then check why it hit. Use <code>reverse-continue</code> command <a href="https://sourceware.org/gdb/current/onlinedocs/gdb/Reverse-Execution.html#Reverse-Execution">4</a>
+or use menu <em>Run</em> -&gt; <em>Reverse</em>.</p>
+
+<p>In this case, this will take a long time (mainly due to the large heap).
+Eventually, the watchpoint will hit in <code>Object &gt;&gt; #basicAt:put:</code></p>
+
+<p><img src="vdb-01-03.png" alt="Screenshot of VDB (3)"></p>
+
+<p>Again an excerpt from the stack trace:</p>
+
+<pre><code>/home/jv/Priv.../smalltalk/stx [stopped]
+  Thread 15903.15903 [stopped]
+     0 0x00007FD445BC82F5 [S-C] Object &gt;&gt; #basicAt:put: (Object.st:1175)
+     1 0x00007FD44651B0E4 [S-C] TwoByteString &gt;&gt; #basicAt:put: (TwoByteString.st:108)
+     2 0x00007FD445B997DE [S-C] Object &gt;&gt; #at:put: (Object.st:742)
+     3 0x00007FD44605729C [S-C] SequenceableCollection &gt;&gt; #from:to:put: (SequenceableCollection.st:6140)
+     4 0x00007FD446056FFF [S-C] SequenceableCollection &gt;&gt; #atAllPut: (SequenceableCollection.st:6114)
+     5 0x00007FD44651AAE1 [S-C] TwoByteString &gt;&gt; #basicNew: (TwoByteString.st:72)
+     6 0x00007FD445C2D636 [S-C] Behavior &gt;&gt; #new: (Behavior.st:2929)
+     7 0x00007FD4460A4727 [S-C] ArrayedCollection &gt;&gt; #copyEmptyAndGrow: (ArrayedCollection.st:391)
+     8 0x00007FD446042BB8 [S-C] SequenceableCollection &gt;&gt; #, (SequenceableCollection.st:3712)
+     9 0x00007FD446374686 [S-C] CharacterArray &gt;&gt; #, (CharacterArray.st:4114)
+     ...
+</code></pre>
+
+<p>…and from the source:</p>
+
+<pre><code>...
+if (__isSmallInteger(anObject)) {
+    val = __intVal(anObject);
+    if ((unsigned)val &lt;= 0xFFFF) {
+        if ((unsigned)indx &lt; (nbytes&gt;&gt;1)) {
+            unsigned short *sp;
+ 
+            sp = (unsigned short *)(pFirst + (indx&lt;&lt;1));
+&gt;           *sp = val;
+            RETURN ( anObject );
+        }
+    }
+}
+break;
+...
+</code></pre>
+
+<p>The code above is little tricky and needs an explanation, at least what’s its 
+intent. You may want to have a look at <a href="5">full source</a>. Variable:</p>
+
+<ul>
+  <li>
+<code>indx</code> is “unboxed” value of argument <code>index</code> (given as <code>SmallInteger</code>, 
+which is tagged),</li>
+  <li>
+<code>nbytes</code> is number of bytes in variable part of the receiver (essentially, 
+a size of an object in bytes minus size of an object header and named 
+instance variables, if any)</li>
+  <li>and finally, <code>pFirst</code> is a pointer of first indexed byte of the receiver (in this
+case, the receiver is an instance of <code>Unicode16String</code> so <code>pFirst</code> is 
+a pointer to first character).</li>
+</ul>
+
+<p>What the code above does is that after some type- and bound-checks it computes
+the address (<code>sp</code>) where to store the value (<code>val</code>) and then stores it:</p>
+
+<pre><code>sp = (unsigned short *)(pFirst + (indx&lt;&lt;1));
+*sp = val;
+</code></pre>
+
+<p>The code is hard to read, I admit. The <code>pFirst</code> is actually a <code>char *</code> so we have
+to multiply the <code>indx</code> by 2 when using C pointer arithmetic. This is done 
+by left-shift by one (<code>indx&lt;&lt;1</code>) rather than more readable multiplication,
+presumably because it was faster than multiplication in ancient time and 
+compilers were not smart enough to optimize this themselves.</p>
+
+<p>Anyways, let’s see what has happened. The watchpoint stops right after memory
+is modified, so let’s see how the corrupt object looks like now:</p>
+
+<pre><code>(vdb) p (OBJ)0x0000564ff0482260
+$6 = 0x0000564ff0482260 (invalid class: 0x0000564f926e0020)
+</code></pre>
+
+<p>As you may see, the class reference looks “nearly” all right, only lower 2 
+bytes are these funny <code>0020</code> (remember, at the time of crash, the value was
+<code>0x0020002000200020</code>). So, let’s go backward once more (use <code>reverse-continue</code>
+command or <em>Reverse</em> menu item). After a while, it hits again at the same place.
+Let’s see the corrupt object:</p>
+
+<pre><code>p (OBJ)0x0000564ff0482260
+$8 = 0x0000564ff0482260 (a Unicode16String)
+</code></pre>
+
+<p>Here we go! Now the object is all right (references Unicode16String). 
+So now we know that it is <code>Object &gt;&gt; #basicAt:put:</code> that smashes object’s class reference. 
+But why? 
+Let’s see what are the values of <code>indx</code>, <code>pFirst</code> and <code>sp</code>:</p>
+
+<pre><code>(vdb) p /x indx
+$3 = 0x51fffff0
+(vdb) p /x pFirst
+$4 = 0x56504c482280
+(vdb) p /x sp
+$5 = 0x564ff0482260
+</code></pre>
+
+<p>As you can see, the index is rather big (nearly 2G). However, more interesting
+fact is that <code>sp</code> is <em>smaller</em> than <code>pFirst</code>. This is clearly wrong - <code>pFirst</code>
+is pointer to first indexed variable so <code>sp</code> cannot be smaller than that. 
+Looking at the code that computes <code>sp</code>, the problem is probably clear to every
+C programmer:</p>
+
+<pre><code>sp = (unsigned short *)(pFirst + (indx&lt;&lt;1));
+</code></pre>
+
+<p>This is very likely an integer overflow. What is the type of <code>indx</code>?</p>
+
+<pre><code>(vdb) ptype indx
+type = int
+</code></pre>
+
+<p>Oh, an <code>int</code>, a <em>signed</em> 32 bit integer. Since value of <code>indx</code> is little below 
+2G, <code>indx&lt;&lt;1</code> would be negative:</p>
+
+<pre><code>(vdb) p indx &lt;&lt; 1
+$12 = -1543503904
+</code></pre>
+
+<p>Here we go! Job done.</p>
+
+
+    </article>    
+    <script src="https://apis.google.com/js/plusone.js"></script>
+    <div id="comments"></div>
+    <script>
+    gapi.comments.render('comments', {
+        href: window.location,
+        width: '624',
+        first_party_property: 'BLOGGER',
+        view_type: 'FILTERED_POSTMOD'
+    });
+    </script>    
+  </div>
+  
+    <div class="column width1_4">
+      
+        
+      
+        
+      
+        
+          <h2><a href="/2018/01/fun-with-zfs-part-2-creating-debian-zfs-rescue-usb-image.html">Fun with ZFS, part 2: Creating Debian ZFS Rescue USB Image</a></h2>      
+        
+      
+        
+          <h2><a href="/2017/08/csr-mini-howto.html">How to generate TSL/SSL certificate and get it signed</a></h2>      
+        
+      
+        
+          <h2><a href="/2017/06/stx-libjava-used-for-real.html">STX:LIBJAVA used for real</a></h2>      
+        
+      
+        
+          <h2><a href="/2017/06/unamaged-delegates.html">Unmanaged delegates in CLR</a></h2>      
+        
+      
+        
+          <h2><a href="/2017/01/debugging-mixed-native-clr-application-in-windbg.html">Debugging mixed native-CLR application in WinDBG</a></h2>      
+        
+      
+        
+          <h2><a href="/2016/10/a-taste-of-dotNET-in-Bee-Smalltalk.html">A taste of .NET in Bee Smalltalk</a></h2>      
+        
+      
+        
+          <h2><a href="/2016/10/fun-with-zfs-part-1-installing-debian-jessie-on-zfs-root.html">Fun with ZFS, part 1: Installing Debian Jessie on ZFS Root</a></h2>      
+        
+      
+        
+          <h2><a href="/2016/10/first-post.html">First Post</a></h2>      
+        
+      
+    </div>
+  
+
+
+    </div>
+    <script>
+  	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  	(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  	})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  	ga('create', 'UA-80636532-1', 'auto');
+  	ga('send', 'pageview');
+    </script>
+  </body>
+</html>
