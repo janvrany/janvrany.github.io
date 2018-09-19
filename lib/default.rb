@@ -1,4 +1,4 @@
-require 'nanoc-git'
+#require 'nanoc-git'
 
 include Nanoc::Helpers::Blogging
 include Nanoc::Helpers::Tagging

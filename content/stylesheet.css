@@ -91,13 +91,21 @@ h5 {
 	font-size: 110%;	
 }
 
+p > code, pre {
+  background-color: #DDDDDD;
+}
+
 pre {
   margin-left: 2em;
   margin-right: 2em;
-  border-left: 3px solid black;
-  background-color: #DDDDDD;
+  border-left: 3px solid black; 
   padding: 1em;
   overflow-x: auto;
+}
+
+p > code {
+  padding-left: 0.3em;
+  padding-right: 0.3em;
 }
 
 ul {
