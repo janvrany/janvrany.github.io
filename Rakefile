@@ -1,4 +1,17 @@
-require 'stringex'
+
+
+task :default => :compile 
+
+desc "Compile (generate) the site"
+task :compile do
+	sh "bundler exec nanoc"
+end
+
+task :view do
+	sh "bundler exec nanoc view"
+end
+
+
 desc "Create a new post"
 task :new_post, :title do |t, args|
   mkdir_p './content/posts'
