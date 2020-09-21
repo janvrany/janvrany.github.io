@@ -1,0 +1,245 @@
+<!DOCTYPE HTML>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Jan Vraný - Using Eclipse CDT for Eclipse OMR development</title>
+    <link rel="stylesheet" href="/pygments.css">
+    <link rel="stylesheet" href="/stylesheet.css">
+    
+
+    <!-- you don't need to keep this, but it's cool for stats! -->
+    <meta name="generator" content="Nanoc 4.11.18">
+  </head>
+  <body>
+    <div id="header">
+      <div id="jv">
+        Jan Vraný
+      </div>
+
+    	<ul>
+    	<li><a href="/">home</a></li>
+    	<li><a href="/posts">blog</a></li>
+        <li><a href="/projects">projects</a></li>                      
+        <li><a href="https://bitbucket.org/janvrany/">repositories</a></li>
+        <li><a href="/contact">contact</a></li>        
+        <li><a href="/cv.pdf">cv</a></li>
+    	</ul>
+    </div>
+    <div id="main">
+      
+  <div class="column width3_4 post">
+    <h1>Using Eclipse CDT for Eclipse OMR development</h1>
+    <aside>Posted at: September 10, 2020</aside>
+    <article>
+      <h1 id="introduction">Introduction</h1>
+
+<p>Ever since I started to work on <a href="https://www.eclipse.org/omr/">OMR</a> compiler codegen for <a href="https://github.com/eclipse/omr/tree/master/compiler/riscv">RISC-V</a>, I struggled to setup Eclipse CDT so I can
+use use it for OMR development. I tried a lot of things, but there was always something missing. The most annoying 
+part was that code indexer did not work very well and that made code assist (code completion) useless.</p>
+
+<p>Quite recently, I did another pass over the setup and found a way that works okay (so far):</p>
+
+<ul>
+  <li>Supports multiple configurations including cross-compilation for different targets (tried only x86-64 and RISC-V),</li>
+  <li>building OMR from IDE works and does not interfere with manual building,</li>
+  <li>code assist works just fine (in most cases anyway),</li>
+  <li>code formatter works and follows OMR compiler coding style (in most cases anyway).</li>
+</ul>
+
+<p>This post contains a step-by-step recipe how to setup Eclipse CDT.</p>
+
+<!-- more -->
+
+<h1 id="before-we-start">Before we start</h1>
+
+<p>Following recipe has been tested on Eclipse CDT 2020-06 <em>with</em> <a href="https://marketplace.eclipse.org/content/cmake4eclipse">Cmake4eclipse plugin</a>. The easiest way to install the plugin is to from eclipse marketplace right from the IDE.</p>
+
+<p>If you already have some Eclipse project setup files for OMR in your Eclipse workspace (<code>.project</code>, <code>.cproject</code> and <code>.settings</code>), make sure you remove them before trying the following. Otherwise, it may not work because Eclipse will pick parts from old config and you get into all sorts of weird situations. Been there, seen that.</p>
+
+<h1 id="setting-up-an-eclipse-cdt-project">Setting up an Eclipse CDT project</h1>
+
+<ol>
+  <li>
+    <p>Configure CDT indexer to always use active configuration: open workspace preferences (<em>Window ▷ Preferences</em>), select page <em>C/C++ ▷ Indexer</em> and check <em>Use active build configuration</em>.</p>
+  </li>
+  <li>
+    <p>Create new generic project: <em>File ▷ New ▷ Project</em>:</p>
+
+    <ul>
+      <li>
+        <p>In the dialog, select <em>C/C++ ▷ C++ Project</em>.</p>
+
+        <p><img src="using-eclipse-cdt-for-omr-01.png" alt="Screenshot 1"></p>
+      </li>
+      <li>
+        <p>Press <em>Next</em>, fill in a project name and location, select <em>CMake driven ▷ Empty Project</em> as project type and <em>CMake driven</em> as toolchain.</p>
+
+        <p><img src="using-eclipse-cdt-for-omr-02.png" alt="Screenshot 1"></p>
+      </li>
+      <li>
+        <p>Press <em>Finish</em></p>
+      </li>
+    </ul>
+
+    <p><strong>WARNING</strong>: don’t create project using <em>File ▷ New ▷ C/C++ Project</em> — it is tempting, but that lead anywhere.</p>
+  </li>
+  <li>
+    <p>Once a project is created, open project properties (<em>Project ▷ Properties</em>):</p>
+
+    <ul>
+      <li>
+        <p>Select <em>C/C++ Build</em> property page and press <em>Manage Configurations…</em>, in the dialog delete all but one configuration (we will optionally add more later). Rename it to <em>x86_64-linux</em> (obviously, you can choose whatever name you like, I just find this naming usefull since we will then have configurations for cross compiling for different architectures).</p>
+
+        <p><img src="using-eclipse-cdt-for-omr-03.png" alt="Screenshot 1"></p>
+      </li>
+      <li>
+        <p>Select <em>C/C++ Build</em> property page and:</p>
+
+        <ul>
+          <li>
+            <p>In tab <em>Behavior</em>, limit number of parallel jobs to some sensible number. <em>Do not</em> leave it to <em>Use unlimited jobs</em>, it makes the system unusable.</p>
+
+            <p><img src="using-eclipse-cdt-for-omr-04.png" alt="Screenshot 1"></p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>Select <em>C/C++ Build ▷ Cmake4eclipse</em> property page and:</p>
+
+        <ul>
+          <li>Check <em>Force cmake to run with each build</em>
+</li>
+          <li>
+            <p>Enter <code>../../cmake/caches/Travis.cmake</code> in <em>Pre-populate CMake cache entries from file</em>. Note, that this path is relative to build directory, hence <code>../..</code>.</p>
+
+            <p><img src="using-eclipse-cdt-for-omr-05.png" alt="Screenshot 1"></p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>Select <em>C/C++ Build ▷ Cmake4eclipse ▷ Host OS overrides</em> property page and:</p>
+
+        <ul>
+          <li>
+            <p>(Optional) Set <code>CMAKE_BUILD_TYPE</code> to <code>Debug</code></p>
+
+            <p><img src="using-eclipse-cdt-for-omr-06.png" alt="Screenshot 1"></p>
+          </li>
+        </ul>
+      </li>
+    </ul>
+
+    <p>Now you should be able to build OMR from Eclipse using menu <em>Project ▷ Build Project</em>. Also, code should be properly indexed, taking all the defines and include paths from CMake.</p>
+  </li>
+  <li>
+    <p>(Optional) If you’re working on a compiler (like me), you may want to add a new configuration to cross-build OMR for your favourite architectures. If you set this configuration as active, CDT indexer will pick includes and definitions and even code completions (code assist) works as expected.</p>
+
+    <p>Following is setup for RISC-V - you may want to adapt it for other architecture. Open project properties:</p>
+
+    <ul>
+      <li>Select <em>C/C++ Build</em> property page and press <em>Manage Configurations…</em>and create new one, copying all settings from the <em>x86_64-linux</em> and
+(optionally) set it active.</li>
+      <li>Select <em>C/C++ Build ▷ Cmake4eclipse ▷ Host OS overrides</em> property page and add:
+        <ul>
+          <li>Set <code>OMR_TOOLS_IMPORTFILE</code> to <code>${workspace_loc}/omr/build/x86_64-linux/tools/ImportTools.cmake</code>
+</li>
+          <li>Set <code>CMAKE_TOOLCHAIN_FILE</code> to <code>${workspace_loc}/omr/cmake/toolchains/riscv64-linux-cross.cmake</code>
+</li>
+          <li>Set <code>CMAKE_FIND_ROOT_PATH</code> to <code>/opt/riscv/sysroot</code> (you may need to adapt the value to match your system)</li>
+        </ul>
+
+        <p><img src="using-eclipse-cdt-for-omr-07.png" alt="Screenshot 1"></p>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <p>(Optional) If you’re using dark theme (like me), you may want to change the background for “occurences” to something darker than the default. Default is very light, making the text unreadable. To change it, open workspace preferences (<em>Window ▷ Preferences</em>), select page <em>General ▷ Editors ▷ Text Editors ▷ Annotations</em> and then change background of <em>C/C++ Occurences</em> and of <em>C/C++ Write Occurences</em> according to your taste.</p>
+
+    <p><img src="using-eclipse-cdt-for-omr-08.png" alt="Screenshot 1"></p>
+  </li>
+  <li>
+    <p>(Optional) If you’re working on OMR compiler (like me), you may want to change formatter preferences to match OMR compiler formatting style. Open project preferences (<em>Project ▷ Properties</em>), select page <em>C/C++ Build ▷ Formatter</em> and:</p>
+
+    <ul>
+      <li>Tick <em>Enable project specific settings</em>
+</li>
+      <li>
+<em>Import</em> OMR compiler settings from <a href="omr_compiler_formatter_settings.xml">omr_compiler_formatter_settings.xml</a>
+</li>
+    </ul>
+
+    <p><img src="using-eclipse-cdt-for-omr-09.png" alt="Screenshot 1"></p>
+  </li>
+</ol>
+
+<div style="font-size: 150%; text-align: center">All is set. Happy hacking!</div>
+
+
+    </article>    
+    <script src="https://apis.google.com/js/plusone.js"></script>
+    <div id="comments"></div>
+    <script>
+    gapi.comments.render('comments', {
+        href: window.location,
+        width: '624',
+        first_party_property: 'BLOGGER',
+        view_type: 'FILTERED_POSTMOD'
+    });
+    </script>    
+  </div>
+  
+    <div class="column width1_4">
+      
+        
+      
+        
+          <h2><a href="/2018/09/vdb-01.html">Using rr and Visual/VM Debugger to debug Smalltalk/X crash</a></h2>      
+        
+      
+        
+          <h2><a href="/2018/01/fun-with-zfs-part-2-creating-debian-zfs-rescue-usb-image.html">Fun with ZFS, part 2: Creating Debian ZFS Rescue USB Image</a></h2>      
+        
+      
+        
+          <h2><a href="/2017/08/csr-mini-howto.html">How to generate TSL/SSL certificate and get it signed</a></h2>      
+        
+      
+        
+          <h2><a href="/2017/06/stx-libjava-used-for-real.html">STX:LIBJAVA used for real</a></h2>      
+        
+      
+        
+          <h2><a href="/2017/06/unamaged-delegates.html">Unmanaged delegates in CLR</a></h2>      
+        
+      
+        
+          <h2><a href="/2017/01/debugging-mixed-native-clr-application-in-windbg.html">Debugging mixed native-CLR application in WinDBG</a></h2>      
+        
+      
+        
+          <h2><a href="/2016/10/a-taste-of-dotNET-in-Bee-Smalltalk.html">A taste of .NET in Bee Smalltalk</a></h2>      
+        
+      
+        
+          <h2><a href="/2016/10/fun-with-zfs-part-1-installing-debian-jessie-on-zfs-root.html">Fun with ZFS, part 1: Installing Debian Jessie on ZFS Root</a></h2>      
+        
+      
+        
+          <h2><a href="/2016/10/first-post.html">First Post</a></h2>      
+        
+      
+    </div>
+  
+
+
+    </div>
+    <script>
+  	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  	(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  	})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  	ga('create', 'UA-80636532-1', 'auto');
+  	ga('send', 'pageview');
+    </script>
+  </body>
+</html>
