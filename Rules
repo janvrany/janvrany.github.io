@@ -18,8 +18,11 @@ end
 compile '/posts/*.png' do  
 end
 
+compile '/posts/*.xml' do  
+end
+
 route '/posts/*' do  
-  y,m,d,slug,ext = /([0-9]+)\-([0-9]+)\-([0-9]+)\-([^\/]+)\.(md|png|jpg)/.match(item.identifier).captures
+  y,m,d,slug,ext = /([0-9]+)\-([0-9]+)\-([0-9]+)\-([^\/]+)\.(md|png|jpg|xml)/.match(item.identifier).captures
 
   "/#{y}/#{m}/#{slug}.#{ext == 'md' ? 'html' : ext}"
 end

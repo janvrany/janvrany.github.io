@@ -1,4 +1,5 @@
 tmp
-output/**
+output
+drafts
 *.log
 .bundle/ruby
