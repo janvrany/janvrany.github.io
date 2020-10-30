@@ -30,6 +30,31 @@
   
     
       
+        <div class='post'>
+          <h1><a href="/2020/09/using-eclipse-cdt-for-omr-development.html">Using Eclipse CDT for Eclipse OMR development</a></h1>
+          <aside>Posted at: September 10, 2020</aside>
+          <article>
+            <h1 id="introduction">Introduction</h1>
+
+<p>Ever since I started to work on <a href="https://www.eclipse.org/omr/">OMR</a> compiler codegen for <a href="https://github.com/eclipse/omr/tree/master/compiler/riscv">RISC-V</a>, I struggled to setup Eclipse CDT so I can
+use use it for OMR development. I tried a lot of things, but there was always something missing. The most annoying 
+part was that code indexer did not work very well and that made code assist (code completion) useless.</p>
+
+<p>Quite recently, I did another pass over the setup and found a way that works okay (so far):</p>
+
+<ul>
+  <li>Supports multiple configurations including cross-compilation for different targets (tried only x86-64 and RISC-V),</li>
+  <li>building OMR from IDE works and does not interfere with manual building,</li>
+  <li>code assist works just fine (in most cases anyway),</li>
+  <li>code formatter works and follows OMR compiler coding style (in most cases anyway).</li>
+</ul>
+
+<p>This post contains a step-by-step recipe how to setup Eclipse CDT.</p>
+
+<div class='read-more'><a href='/2020/09/using-eclipse-cdt-for-omr-development.html'>Continue reading &rsaquo;</a></div>
+          </article>
+        </div>
+      
     
       
         <div class='post'>
