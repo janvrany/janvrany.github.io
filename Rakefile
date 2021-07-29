@@ -1,4 +1,4 @@
-
+require "stringex"
 
 task :default => :compile 
 
@@ -10,6 +10,14 @@ end
 task :view do
 	sh "bundler exec nanoc view"
 end
+
+task :deploy do
+	sh "bundler exec nanoc deploy"
+end
+
+task :publish => :deploy
+
+
 
 
 desc "Create a new post"
