@@ -1,0 +1,283 @@
+<!DOCTYPE HTML>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Jan Vraný - Developing OpenJ9 JIT for RISC-V</title>
+    <link rel="stylesheet" href="/pygments.css">
+    <link rel="stylesheet" href="/stylesheet.css">
+    
+
+    <!-- you don't need to keep this, but it's cool for stats! -->
+    <meta name="generator" content="Nanoc 4.11.18">
+  </head>
+  <body>
+    <div id="header">
+      <div id="jv">
+        Jan Vraný
+      </div>
+
+    	<ul>
+    	<li><a href="/">home</a></li>
+    	<li><a href="/posts">blog</a></li>
+        <li><a href="/projects">projects</a></li>                      
+        <li><a href="https://bitbucket.org/janvrany/">repositories</a></li>
+        <li><a href="/contact">contact</a></li>        
+        <li><a href="/cv.pdf">cv</a></li>
+    	</ul>
+    </div>
+    <div id="main">
+      
+  <div class="column width3_4 post">
+    <h1>Developing OpenJ9 JIT for RISC-V</h1>
+    <aside>Posted at: July 29, 2021</aside>
+    <article>
+      <p>This post describes (my) workflow when working on RISC-V JIT for OpenJ9. I have wrote
+it mainly as documentation for myself but I may be usefull for anyone who wants work
+on RISC-V JIT in OpenJ9. Especially after I had to put it - hopefully temporarily - 
+on hold.</p>
+
+<!-- more -->
+
+<h2 id="prerequsities">Prerequsities</h2>
+
+<h2 id="cross-compiling">(Cross) compiling</h2>
+
+<p><em>TL;DR:</em> use <a href="https://github.com/janvrany/openj9-openjdk-jdk11-devscripts">openj9-openjdk-jdk11-devscripts</a> to cross-compile:</p>
+
+<pre><code>git clone -b jv/riscv-devel https://github.com/janvrany/openj9-openjdk-jdk11-devscripts
+cd openj9-openjdk-jdk11-devscripts
+./prepare.sh
+./configure.sh --target riscv64-linux-gnu
+./compile.sh --target riscv64-linux-gnu
+</code></pre>
+
+<hr>
+
+<p>Since not everything is upstreamed at the time of writing, you’ll need need my RISC-V development branch of OpenJDK 11, OMR and OpenJ9:</p>
+
+<ul>
+  <li>
+    <p><a href="https://github.com/janvrany/openj9-openjdk-jdk11/tree/jv/riscv-devel">OpenJDK 11</a></p>
+
+    <pre><code>git checkout -b jv/riscv-devel https://github.com/janvrany/openj9-openjdk-jdk11 openj9-openjdk-jdk11
+</code></pre>
+  </li>
+  <li>
+    <p><a href="https://github.com/janvrany/openj9/tree/jv/riscv-devel">OpenJ9</a></p>
+
+    <pre><code>git checkout -b jv/riscv-devel https://github.com/janvrany/openj9 openj9-openjdk-jdk11/openj9
+</code></pre>
+  </li>
+  <li>
+    <p><a href="https://github.com/janvrany/omr/tree/jv/riscv-devel">OMR</a></p>
+
+    <pre><code>git checkout -b jv/riscv-devel https://github.com/janvrany/omr openj9-openjdk-jdk11/omr
+</code></pre>
+  </li>
+</ul>
+
+<p>Use CMake (<code>--with-cmake</code>) to compile OpenJ9 (as of now, there’s no support for RISC-V JIT component when using UMA).
+See <a href="https://github.com/janvrany/openj9-openjdk-jdk11-devscripts/blob/9a1f317e0cdb4763b7f35c0afdb758b722989919/configure.sh#L25-L35">configure.sh</a> 
+for details on how to configure OpenJDK.</p>
+
+<h2 id="testing">Testing</h2>
+
+<p>To test just (cross) compiled OpenJ9, we need to copy the JDK image RISC-V machine - either real hardware or
+virtual machine running under QEMU. I use <code>rsync</code> (<code>unleashed</code> is name of my testing RISC-V machine). :</p>
+
+<pre><code>rsync ./openj9-openjdk-jdk11/build/linux-riscv64-normal-server-slowdebug/images/jdk unleashed:/tmp
+</code></pre>
+
+<p>Now, connect to testing machine (<code>unleashed</code> in my case) and continue there. First, create (or edit) a
+test code, for example <code>Test.java</code>:</p>
+
+<pre><code>public class Test {
+    public static int jitMeaningOfWorld() {
+        return 42;
+    }
+
+    public static void main(String[] args) {
+        System.out.println("Meaning of world is " + jitMeaningOfWorld());
+    }
+}
+</code></pre>
+
+<p>…and compile it:</p>
+
+<pre><code>javac -cp . Test.java
+</code></pre>
+
+<p>And finally, run OpenJ9 to see whether it works (or not):</p>
+
+<pre><code>/tmp/jdk/bin/java "-Xjit:verbose,count=0,limit={Test.jit*}" -cp . Test
+</code></pre>
+
+<p>The <code>-Xjit</code> option is important:</p>
+
+<ul>
+  <li>
+<code>verbose</code> tells the VM to print compilation log so you can see (most importantly) which method has been compiled and so on,</li>
+  <li>
+<code>count=0</code> tells the VM to compile on first execution (normally the JVM compiles only methods that are executed ‘often’)</li>
+  <li>
+<code>limit={Test.jit*}</code> is very important in this context, it tells the JVM to ever attempt to compile <em>only</em> methods whose signature matches the pattern.</li>
+</ul>
+
+<p>So, when run, you should see something like:</p>
+
+<pre><code>#INFO:  _______________________________________
+#INFO:  Version Information:
+#INFO:       JIT Level  - j9jit_20210112_0658_jv
+#INFO:       JVM Level  - 20210111_000000
+#INFO:       GC Level   - 3bf6fa788
+#INFO:
+#INFO:  _______________________________________
+#INFO:  AOT
+#INFO:  options specified:
+#INFO:       verbose,count=0,limit={Test.jit*}
+#INFO:
+#INFO:  options in effect:
+#INFO:       verbose=1
+
+#INFO:       compressedRefs shiftAmount=0
+#INFO:       compressedRefs isLowMemHeap=1
+#INFO:  StartTime: Jan 12 10:40:12 2021
+#INFO:  Free Physical Memory: 8215 MB
+#INFO:  CPU entitlement = 400.00
++ (cold) Test.jitMeaningOfWorld()I @ 0000004016DF6024-0000004016DF6044 OrdinaryMethod - Q_SZ=2 Q_SZI=2 QW=6 j9m=0000000000166AB8 bcsz=3 sync compThreadID=0 CpuLoad=208%(52%avg) JvmCpu=103%
+Meaning of world is 42
+</code></pre>
+
+<p>Most importantly, this line:</p>
+
+<pre><code>+ (cold) Test.jitMeaningOfWorld()I @ 0000004016DF6024-0000004016DF6044 OrdinaryMethod - Q_SZ=2 Q_SZI=2 QW=6 j9m=0000000000166AB8 bcsz=3 sync compThreadID=0 CpuLoad=208%(52%avg) JvmCpu=103%
+</code></pre>
+
+<p>means that the JVM compiled method <code>Test.jitMeaningOfWorld()I</code>. And the one below:</p>
+
+<pre><code>Meaning of world is 42
+</code></pre>
+
+<p>means that this compiled method has been executed and returned correct answer. <em>Yay!</em></p>
+
+<h2 id="debugging">Debugging</h2>
+
+<p>One can certainly use GDB on RISC-V machine to debug the JIT:</p>
+
+<pre><code>/opt/gdb/bin/gdb -ex "r" --args /tmp/jdk/bin/java "-Xjit:breakOnEntry,verbose,count=0,limit={Test.jit*}" -cp . Test
+</code></pre>
+
+<p><strong>However</strong>, here I’m going to use <code>gdbserver</code> and debug from local development machine connecting to remote RISC-V machine. This way, I have the convenience of local development machine (so I can use my favourite GDB frontend). On the other hand, the setup is more complex.</p>
+
+<ol>
+  <li>
+    <p>On development machine, start <code>gdb</code> and load <code>java</code> binary into it:</p>
+
+    <pre><code> (gdb) file openj9-openjdk-jdk11/build/linux-riscv64-normal-server-slowdebug/images/jdk/bin/java
+ Reading symbols from openj9-openjdk-jdk11/build/linux-riscv64-normal-server-slowdebug/images/jdk/bin/java
+ ...
+ Reading symbols from openj9-openjdk-jdk11/build/linux-riscv64-normal-server-slowdebug/images/jdk/bin/java.debuginfo
+ ...
+ (gdb)
+</code></pre>
+  </li>
+  <li>
+    <p>Optional. While recent GDB can download debug info from remote host automagically, this is not always viable. For example, I connect to RISC-V host from my office over slow VPN so download takes ages.</p>
+
+    <p>To make GDB to load debug symbols from local filesystem, we need tell GDB where’s the “sysroot”: where it an find (on a local filesystem) the filesystem of the remote target (the on of remote RISC-V machine). It does not have to be <em>excactly</em> the same, but similar enough. Luckily, we have RISC-V “sysroot” on a local machine - we needed it for cross compilation.</p>
+
+    <p>The only issue is that the sysroot used for compilation does not have built jdk in <code>/tmp</code> (or wherever one
+uploads the built JDK, see section <em>Testing</em> above). The easiest way to create symlink:</p>
+
+    <pre><code> bash $ (cd /opt/riscv/sysroot/tmp &amp;&amp; ln -s /.../openj9-openjdk-jdk11/build/linux-riscv64-normal-server-slowdebug/images/jdk .)
+</code></pre>
+
+    <p>And then in GDB just do:</p>
+
+    <pre><code> (gdb) set sysroot /opt/riscv/sysroot
+ (gdb)
+</code></pre>
+  </li>
+  <li>
+    <p>Finally, run a <code>gdbserver</code> on RISC-V machine and connect to it. In GDB, do:</p>
+
+    <pre><code> (gdb) target extended-remote | ssh unleashed /opt/gdb/bin/gdbserver - /tmp/jdk/bin/java '-Xjit:breakOnEntry,verbose,count=0,limit={RISCVJitTest.jit*}' -cp . Test
+</code></pre>
+  </li>
+</ol>
+
+<p>Happy debugging!</p>
+
+
+    </article>    
+    <script src="https://apis.google.com/js/plusone.js"></script>
+    <div id="comments"></div>
+    <script>
+    gapi.comments.render('comments', {
+        href: window.location,
+        width: '624',
+        first_party_property: 'BLOGGER',
+        view_type: 'FILTERED_POSTMOD'
+    });
+    </script>    
+  </div>
+  
+    <div class="column width1_4">
+      
+        
+      
+        
+          <h2><a href="/2020/09/using-eclipse-cdt-for-omr-development.html">Using Eclipse CDT for Eclipse OMR development</a></h2>      
+        
+      
+        
+          <h2><a href="/2018/09/vdb-01.html">Using rr and Visual/VM Debugger to debug Smalltalk/X crash</a></h2>      
+        
+      
+        
+          <h2><a href="/2018/01/fun-with-zfs-part-2-creating-debian-zfs-rescue-usb-image.html">Fun with ZFS, part 2: Creating Debian ZFS Rescue USB Image</a></h2>      
+        
+      
+        
+          <h2><a href="/2017/08/csr-mini-howto.html">How to generate TSL/SSL certificate and get it signed</a></h2>      
+        
+      
+        
+          <h2><a href="/2017/06/stx-libjava-used-for-real.html">STX:LIBJAVA used for real</a></h2>      
+        
+      
+        
+          <h2><a href="/2017/06/unamaged-delegates.html">Unmanaged delegates in CLR</a></h2>      
+        
+      
+        
+          <h2><a href="/2017/01/debugging-mixed-native-clr-application-in-windbg.html">Debugging mixed native-CLR application in WinDBG</a></h2>      
+        
+      
+        
+          <h2><a href="/2016/10/a-taste-of-dotNET-in-Bee-Smalltalk.html">A taste of .NET in Bee Smalltalk</a></h2>      
+        
+      
+        
+          <h2><a href="/2016/10/fun-with-zfs-part-1-installing-debian-jessie-on-zfs-root.html">Fun with ZFS, part 1: Installing Debian Jessie on ZFS Root</a></h2>      
+        
+      
+        
+          <h2><a href="/2016/10/first-post.html">First Post</a></h2>      
+        
+      
+    </div>
+  
+
+
+    </div>
+    <script>
+  	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  	(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  	})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  	ga('create', 'UA-80636532-1', 'auto');
+  	ga('send', 'pageview');
+    </script>
+  </body>
+</html>
