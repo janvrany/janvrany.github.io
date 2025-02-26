@@ -1,18 +1,25 @@
-require "stringex"
+#require "stringex"
+
+bundler='bundler3.3'
 
 task :default => :compile 
 
+desc "Setup (install) build tools"
+task :setup do
+  sh "#{bundler} install"
+end
+
 desc "Compile (generate) the site"
 task :compile do
-	sh "bundler exec nanoc"
+	sh "#{bundler} exec nanoc"
 end
 
 task :view do
-	sh "bundler exec nanoc view"
+	sh "#{bundler} exec nanoc view"
 end
 
 task :deploy do
-	sh "bundler exec nanoc deploy"
+	sh "#{bundler} exec nanoc deploy"
 end
 
 task :publish => :deploy
