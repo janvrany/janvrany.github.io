@@ -22,5 +22,5 @@ used for real, in "industry".
 > 
 > Frank
 
-[1]: https://swing.fit.cvut.cz/projects/stx-jv
+[1]: https://jan.vrany.io/stx
 [2]: https://swing.fit.cvut.cz/projects/stx-libjava
