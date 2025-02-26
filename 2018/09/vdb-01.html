@@ -36,7 +36,7 @@
 <p>This year on <a href="https://esug.github.io/2018-Conference/conf2018.html">ESUG 2018 conference</a> in Cagliary, Sardinia, I gave a talk 
 showing how to debug a faulty smalltalk runtime using <a href="https://www.gnu.org/software/gdb/">GNU debugger</a>, 
 Mozilla <a href="https://rr-project.org/">rr</a> and <a href="https://bitbucket.org/janvrany/jv-vdb/src/default/">Visual / VM Debugger</a> I have shown how I have debugged
-a real bug found in Smalltalk/X - <a href="https://swing.fit.cvut.cz/projects/stx-jv/ticket/200">issue #200</a>.</p>
+a real bug found in Smalltalk/X - <a href="https://jan.vrany.io/stx/ticket/200">issue #200</a>.</p>
 
 <p>Following post is pretty much the ESUG 2018 talk in a form of an article. And, 
 by the way, the conference was great and with some very interesting talks.</p>
@@ -56,7 +56,7 @@ reasonably modern Linux distro.</p>
   <li>
     <p>Then you need to build your own Smalltalk/X to exhibit the problem, since
 it has been long time fixed. To build Smalltalk/X, follow 
-<a href="https://swing.fit.cvut.cz/projects/stx-jv/wiki/Documentation/BuildingStXWithRakefiles">build instructions</a>. However, after <code>rake checkout</code> and before 
+<a href="https://jan.vrany.io/stx/wiki/Documentation/BuildingStXWithRakefiles">build instructions</a>. However, after <code>rake checkout</code> and before 
 commencing <code>rake compile</code>, you need to revert revert commit <a href="https://bitbucket.org/janvrany/stx-libbasic/commits/574962856f042b0a8dce930e144727927ecf1976">574962856f04</a></p>
 
     <p>pushd build/stx/libbasic
